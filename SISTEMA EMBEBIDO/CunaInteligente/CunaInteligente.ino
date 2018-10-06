@@ -19,9 +19,42 @@ int valorLlanto = 0;      //variable to store the value coming from the sensor
 int tiempoUltimoLlanto = 0;
 int tiempoSilencio = 0;
 
+//Para la red y comunicación
+#include <SoftwareSerial.h>
+#define DEBUG true
+String sendCommand(String command, const int timeout, boolean debug);
+SoftwareSerial esp8266(5,4); // Convierte el pin5 en TX ; convierte el pin4 en RX
 
 void setup() {
-  Serial.begin (9600);
+  
+    /*
+     * Configuracion para el Wi-Fi
+     * Utilizamos para usar la comunicacion serial
+     */
+    Serial.begin(115200);     //Iniciando puerto serial
+    esp8266.begin(115200);    //Iniciando conexión con módulo WIFI
+
+    //Inicializando red WIFI
+  //sendCommand("AT+RST\r\n",2000,DEBUG); // reset module
+  //sendCommand("AT+CWMODE=3\r\n",1000,DEBUG); // configure as access point
+  sendCommand("AT+CWJAP=\"SOa-IoT-N750\",\"ioteshumo\"\r\n",3000,DEBUG);
+  //delay(20000);
+   Serial.println(sendCommand("AT+CIFSR\r\n",1000,DEBUG)); // get ip address
+  if(esp8266.find("STAIP,\"")){
+    Serial.println("Entro al  IF");
+    String response = "";
+    for(int i=0; i<15; i++)
+      {
+        char c = esp8266.read(); // read the next character.
+        response+=c;
+      }  
+      
+    Serial.println(response);
+  }
+  sendCommand("AT+CIPMUX=1\r\n",1000,DEBUG); // configure for multiple connections
+  sendCommand("AT+CIPSERVER=1,80\r\n",1000,DEBUG); // turn on server on port 80
+  Serial.println("Server Ready");
+
   servoMotor.attach(PinServo); // el servo trabajará desde el pin definido como PinServo
   servoMotor.write(ServoCerrado);   // Desplazamos a la posición 0
   tiempoInicialAmaque = millis();
@@ -85,3 +118,35 @@ void escucharLlanto(){
 }
 
 
+
+/*
+* Name: sendCommand
+* Description: Function used to send data to ESP8266. Sirve para enviar los códigos AT
+* Params: command - the data/command to send; timeout - the time to wait for a response; debug - print to Serial window?(true = yes, false = no)
+* Returns: The response from the esp8266 (if there is a reponse)
+*/
+String sendCommand(String command, const int timeout, boolean debug)
+{
+    String response = "";
+           
+    esp8266.print(command); // send the read character to the esp8266
+    
+    long int time = millis();
+    
+    while( (time+timeout) > millis())
+    {
+      while(esp8266.available())
+      {
+        // The esp has data so display its output to the serial window 
+        char c = esp8266.read(); // read the next character.
+        response+=c;
+      }  
+    }
+    
+    if(debug)
+    {
+      Serial.print(response);
+    }
+    
+    return response;
+}
