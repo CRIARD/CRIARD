@@ -24,6 +24,7 @@ int tiempoSilencio = 0;
 int tiempoInicioProm = 0; // para calcular el ruido ambiente
 int tiempoFinProm = 0;
 int muestras = 0;
+
 //Variables LDR
 #define PinLDR A0 // Pin donde esta conectado el LDR
 #define PinLED 11 // Pin donde esta conectado el LED (PWM)
@@ -50,16 +51,17 @@ void setup() {
 
 void loop() {
   
+  //****Estas funciones permiten activar el servo en relacion al sonido detectado por el microfono****//
+  
+  //ruidoAmbiente();
   //amacarCuna();
   //escucharLlanto();
+
+  //****Estas funciones permiten accionar el led de manera gradual conforme aumenta o disminuye la luz ambiente****//
   
   //float luz= detectarLuz();//detecto la luz ambiente
   //encenderLEDGradual(luz); //Enciendo el led gradualmente segun la luz ambiente.
 
-  
-  //ruidoAmbiente();
-  
-  
 }
 
 void encenderLEDGradual(float luz){
