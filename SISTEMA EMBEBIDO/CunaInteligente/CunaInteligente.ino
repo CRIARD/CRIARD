@@ -28,45 +28,43 @@ SoftwareSerial esp8266(5,4); // Convierte el pin5 en TX ; convierte el pin4 en R
 void setup() {
   
     /*
-     * Configuracion para el Wi-Fi
-     * Utilizamos para usar la comunicacion serial
-     */
+    * Configuracion para el Wi-Fi
+    * Utilizamos para usar la comunicacion serial
+    */
     Serial.begin(115200);     //Iniciando puerto serial
     esp8266.begin(115200);    //Iniciando conexión con módulo WIFI
 
     //Inicializando red WIFI
-  //sendCommand("AT+RST\r\n",2000,DEBUG); // reset module
-  //sendCommand("AT+CWMODE=3\r\n",1000,DEBUG); // configure as access point
-  sendCommand("AT+CWJAP=\"SOa-IoT-N750\",\"ioteshumo\"\r\n",3000,DEBUG);
-  //delay(20000);
-   Serial.println(sendCommand("AT+CIFSR\r\n",1000,DEBUG)); // get ip address
-  if(esp8266.find("STAIP,\"")){
-    Serial.println("Entro al  IF");
-    String response = "";
-    for(int i=0; i<15; i++)
-      {
+    //sendCommand("AT+RST\r\n",2000,DEBUG); // reset module
+    //sendCommand("AT+CWMODE=3\r\n",1000,DEBUG); // configure as access point
+  
+    sendCommand("AT+CWJAP=\"Speedy-AC6CA3\",\"matiasmanda\"\r\n",3000,DEBUG);
+    //delay(20000);
+    Serial.println(sendCommand("AT+CIFSR\r\n",1000,DEBUG)); // get ip address
+    if(esp8266.find("STAIP,\"")){
+      Serial.println("Entro al  IF");
+      String response = "";
+      for(int i=0; i<15; i++){
         char c = esp8266.read(); // read the next character.
         response+=c;
       }  
       
-    Serial.println(response);
-  }
-  sendCommand("AT+CIPMUX=1\r\n",1000,DEBUG); // configure for multiple connections
-  sendCommand("AT+CIPSERVER=1,80\r\n",1000,DEBUG); // turn on server on port 80
-  Serial.println("Server Ready");
+      Serial.println(response);
+    }
+    sendCommand("AT+CIPMUX=1\r\n",1000,DEBUG); // configure for multiple connections
+    sendCommand("AT+CIPSERVER=1,80\r\n",1000,DEBUG); // turn on server on port 80
+    Serial.println("Server Ready");
 
-  servoMotor.attach(PinServo); // el servo trabajará desde el pin definido como PinServo
-  servoMotor.write(ServoCerrado);   // Desplazamos a la posición 0
-  tiempoInicialAmaque = millis();
-  tiempoSilencio = millis();
-  tiempoUltimoLlanto = millis();
+    servoMotor.attach(PinServo); // el servo trabajará desde el pin definido como PinServo
+    servoMotor.write(ServoCerrado);   // Desplazamos a la posición 0
+    tiempoInicialAmaque = millis();
+    tiempoSilencio = millis();
+    tiempoUltimoLlanto = millis();
 }
 
 void loop() {
-  amacarCuna();
-  escucharLlanto();
-
-
+  //amacarCuna();
+  //escucharLlanto();
 }
 
 
