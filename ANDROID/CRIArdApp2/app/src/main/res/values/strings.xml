@@ -3,4 +3,5 @@
     <string name="title_home">Hogar</string>
     <string name="title_cuna">Cuna Inteligente</string>
     <string name="title_config">Configuración</string>
+    <string name="title_activity_inicial">ActivityInicial</string>
 </resources>

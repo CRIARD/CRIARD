@@ -10,6 +10,8 @@ import android.widget.TextView;
 public class CRIArdMainActivity extends AppCompatActivity {
 
     private TextView mTextMessage;
+    private String puerto;
+    private String ip;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -36,6 +38,9 @@ public class CRIArdMainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_criard_main);
 
+        Bundle bundle =  getIntent().getExtras();
+        this.ip = (String) bundle.get("ip");
+        this.puerto = (String) bundle.get("puerto");
         mTextMessage = (TextView) findViewById(R.id.message);
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
