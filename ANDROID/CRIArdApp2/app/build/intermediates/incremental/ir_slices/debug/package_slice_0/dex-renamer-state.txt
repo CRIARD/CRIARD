@@ -1,0 +1,4 @@
+#Sun Oct 14 20:43:14 ART 2018
+base.0=C\:\\Users\\Matias\\Documents\\GitHub\\CRIARD\\ANDROID\\CRIArdApp2\\app\\build\\intermediates\\transforms\\dexMerger\\debug\\0
+path.0=classes.dex
+renamed.0=classes.dex

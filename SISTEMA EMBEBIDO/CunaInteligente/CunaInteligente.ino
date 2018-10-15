@@ -32,11 +32,15 @@ unsigned int luminosidad;
 float coeficiente_porcentaje=100.0/1023.0; // El valor de la entrada analógica va de 0 a 1023 y se quiere convertir a porcentaje que va de cero a 100
 
 #include <SoftwareSerial.h>
+#include <ArduinoJson.h> 
+#include <SPI.h>
+#include <Ethernet.h>
  // arduino Rx (pin 2) ---- ESP8266 Tx
  // arduino Tx (pin 3) ---- ESP8266 Rx
 SoftwareSerial esp8266(3,2); 
 
-
+int conexionID = 0;
+String peticion = "";
 void setup()
 {
   Serial.begin(115200);  // monitor serial del arduino
@@ -62,48 +66,17 @@ void setup()
   sendData("AT+CIPMUX=1\r\n",1000); // configurar para multiples conexiones
   sendData("AT+CIPSERVER=1,80\r\n",1000);         // servidor en el puerto 80
 }
+
+
 void loop()
 {
- if(esp8266.available())   // revisar si hay mensaje del ESP8266
- {
-     if(esp8266.find("+IPD,")) // revisar si el servidor recibio datos
-     {
-         delay(1500); // esperar que lleguen los datos hacia el buffer
-         int conexionID = esp8266.read()-48; // obtener el ID de la conexión para poder responder
 
-         esp8266.find("led="); // bucar el texto "led="
-         int state = (esp8266.read()-48); // Obtener el estado del pin a mostrar
+  detectarCliente();
 
-         //digitalWrite(13, state); // Cambiar estado del pin
-         while(esp8266.available()){
-            char c = esp8266.read();
-            Serial.print(c);
-        }
- 
-        //responder y cerrar la conexión para que el navegador no se quede cargando 
-        // página web a enviar
-        String webpage = "";
-        if (state==1) webpage += "<h1>Led = encendido!</h1>";
-        else { webpage += "<h1>Led = apagado!</h1>";}
- 
-       // comando para enviar página web
-       String comandoWebpage = "AT+CIPSEND=";
-       comandoWebpage+=conexionID;
-       comandoWebpage+=",";
-       comandoWebpage+=webpage.length();
-       comandoWebpage+="\r\n";
-       sendData(comandoWebpage,1000);
-       sendData(webpage,1000);
-       
-       // comando para terminar conexión
-       String comandoCerrar = "AT+CIPCLOSE=";
-       comandoCerrar+=conexionID;
-       comandoCerrar+="\r\n";
-       sendData(comandoCerrar,3000);
-     }
-  }
 }
 
+
+/**DECLARACION DE FUNCIONES**/
 void encenderLEDGradual(float luz){
   
     analogWrite(PinLED,luz);   
@@ -191,3 +164,59 @@ void sendData(String comando, const int timeout)
  } 
  return;
 }
+
+int analizarPeticion(){
+  
+       esp8266.find("led="); // bucar el texto "led="
+       int state = (esp8266.read()-48); // Obtener el estado del pin a mostrar
+      
+       //digitalWrite(13, state); // Cambiar estado del pin
+       while(esp8266.available()){
+          char c = esp8266.read();
+          Serial.print(c);
+      } 
+      return state;
+  }
+String construirRespuesta(int state){
+  
+        //responder y cerrar la conexión para que el navegador no se quede cargando 
+        // página web a enviar
+        String webpage = "";
+        if (state==1) webpage += "<h1>Led = encendido!</h1>";
+        else { webpage += "<h1>Led = apagado!</h1>";}
+        
+       return webpage;
+       
+  }
+bool enviarRespuesta(String respuesta){
+  
+      // comando para enviar página web
+      String comandoWebpage = "AT+CIPSEND=";
+      comandoWebpage+=conexionID;
+      comandoWebpage+=",";
+      comandoWebpage+=respuesta.length();
+      comandoWebpage+="\r\n";
+      sendData(comandoWebpage,1000);
+      sendData(respuesta,1000);
+  }
+bool cerrarConexion(){
+         // comando para terminar conexión
+       String comandoCerrar = "AT+CIPCLOSE=";
+       comandoCerrar+=conexionID;
+       comandoCerrar+="\r\n";
+       sendData(comandoCerrar,3000);
+  }
+bool detectarCliente(){
+
+  
+  if(esp8266.find("+IPD,")) // revisar si el servidor recibio datos
+     {
+         delay(1500); // esperar que lleguen los datos hacia el buffer
+         int conexionID = esp8266.read()-48; // obtener el ID de la conexión para poder responder
+         int state = analizarPeticion();
+         String respuesta = construirRespuesta(state);
+         enviarRespuesta(respuesta);
+         cerrarConexion();
+     }
+  
+  }
