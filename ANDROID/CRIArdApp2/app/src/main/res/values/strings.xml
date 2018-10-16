@@ -4,4 +4,7 @@
     <string name="title_cuna">Cuna Inteligente</string>
     <string name="title_config">Configuración</string>
     <string name="title_activity_inicial">ActivityInicial</string>
+    <string name="title_activity_menu_hogar">menu_hogar</string>
+    <string name="title_activity_menu_cuna">menu_cuna</string>
+    <string name="title_activity_menu_config">menu_config</string>
 </resources>

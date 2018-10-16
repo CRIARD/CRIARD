@@ -14,7 +14,6 @@ import java.net.URL;
 
 public class ClienteHttp_GET extends AsyncTask<String,String,String> {
 
-
     //objeto interfaz que contendra los callbacks que son utilizados para poder mostrar los resultados
     //de la ejecucion del hilo en la activity principal
     private InterfazAsyntask caller;
@@ -30,7 +29,7 @@ public class ClienteHttp_GET extends AsyncTask<String,String,String> {
     public ClienteHttp_GET(Activity a)
     {
         //se alamcena el contexto
-        this.caller=(InterfazAsyntask)a;
+        this.caller = (InterfazAsyntask)a;
     }
 
 
@@ -94,7 +93,6 @@ public class ClienteHttp_GET extends AsyncTask<String,String,String> {
     //         sensados por el potenciometro
     protected String doInBackground(String ...params)
     {
-
         return GET(params[0]);
     }
 
@@ -119,15 +117,14 @@ public class ClienteHttp_GET extends AsyncTask<String,String,String> {
             //Si se ejecuto el Request correctamente,se llama al metodo de la activity Principal encargado
             // de actualizar el valor de texto mostrado en el TextView y actualizar el grafico del Velocimetro
 
-            JSONObject json = new JSONObject(result);
+            //JSONObject json = new JSONObject(result);
 
-            Float valor = Float.parseFloat(json.getString("valor"));
-            String str = "Sensor: " + json.getString("sensor")+ "\n Valor: " + valor;
+            //Float valor = Float.parseFloat(json.getString("valor"));
+            //String str = "Sensor: " + json.getString("sensor")+ "\n Valor: " + result;
 
-            caller.actualizarVelocimetro(valor);
-            caller.mostrarTextViewPotenciometro(str);
+            caller.mostrarToastMake(result);/**Aca defino un estado de prueba**/
         }
-        catch (JSONException e) {
+        catch (Exception e) {
             e.printStackTrace();
         }
     }

@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="app.criard.criardapp">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- To auto-complete the email text field in the login form with the user's emails -->
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.READ_PROFILE" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -20,7 +26,16 @@
         </activity>
         <activity
             android:name=".CRIArdMainActivity"
-            android:label="@string/app_name"></activity>
+            android:label="@string/app_name" />
+        <activity
+            android:name=".menu_hogar"
+            android:label="@string/title_activity_menu_hogar" />
+        <activity
+            android:name=".menu_cuna"
+            android:label="@string/title_activity_menu_cuna" />
+        <activity
+            android:name=".menu_config"
+            android:label="@string/title_activity_menu_config"></activity>
     </application>
 
 </manifest>

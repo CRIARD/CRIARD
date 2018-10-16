@@ -19,6 +19,9 @@ public class ActivityInicial extends Activity {
         setContentView(R.layout.activity_inicial);
         ip = (EditText) findViewById(R.id.txt_ip);
         puerto = (EditText) findViewById(R.id.txt_puerto);
+
+        ip.setText("192.168.4.1");
+        puerto.setText("80");
         boton = (Button) findViewById(R.id.btn_iniciar);
         boton.setOnClickListener(this.Conectar);
     }

@@ -1,5 +1,6 @@
 package app.criard.criardapp;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -12,6 +13,8 @@ public class CRIArdMainActivity extends AppCompatActivity {
     private TextView mTextMessage;
     private String puerto;
     private String ip;
+    private String ruta;
+    private Intent intent;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -20,13 +23,28 @@ public class CRIArdMainActivity extends AppCompatActivity {
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.navigation_home:
-                    mTextMessage.setText(R.string.title_home);
+
+                    intent = new Intent(CRIArdMainActivity.this,menu_hogar.class);
+                    intent.putExtra("ruta",ruta);
+                    startActivity(intent);
+                    finish();
+                    //mTextMessage.setText(R.string.title_home);
                     return true;
                 case R.id.navigation_cuna:
-                    mTextMessage.setText(R.string.title_cuna);
+
+                    intent = new Intent(CRIArdMainActivity.this,menu_cuna.class);
+                    intent.putExtra("ruta",ruta);
+                    startActivity(intent);
+                    finish();
+                    //mTextMessage.setText(R.string.title_cuna);
                     return true;
                 case R.id.navigation_config:
-                    mTextMessage.setText(R.string.title_config);
+
+                    intent = new Intent(CRIArdMainActivity.this,menu_config.class);
+                    intent.putExtra("ruta",ruta);
+                    startActivity(intent);
+                    finish();
+                    //mTextMessage.setText(R.string.title_config);
                     return true;
             }
             return false;
@@ -42,8 +60,16 @@ public class CRIArdMainActivity extends AppCompatActivity {
         this.ip = (String) bundle.get("ip");
         this.puerto = (String) bundle.get("puerto");
         mTextMessage = (TextView) findViewById(R.id.message);
+
+        mTextMessage.setText("Se encuentra conectado a la direccion: " + this.ip + " puerto: " + this.puerto);
+        armarRuta();
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+    }
+
+    private void armarRuta(){
+
+        this.ruta = "http://" + this.ip  + "/";
     }
 
 }
