@@ -37,8 +37,8 @@ float coeficiente_porcentaje=100.0/1023.0; // El valor de la entrada analógica 
 #include <Ethernet.h>
  // arduino Rx (pin 2) ---- ESP8266 Tx
  // arduino Tx (pin 3) ---- ESP8266 Rx
-SoftwareSerial esp8266(3,2); 
-
+SoftwareSerial esp8266(2,3); 
+#define DEBUG true
 int conexionID = 0;
 String peticion = "";
 void setup()
@@ -58,13 +58,13 @@ void setup()
   tiempoInicioProm = millis();
   tiempoFinProm = 0; 
   
-  sendData("AT+RST\r\n",2000);      // resetear módulo
-  sendData("AT+CWSAP=\"ARDUINO\",\"soa-criard-266\",3,2\r\n",8000); 
-  sendData("AT+CWMODE=2\r\n",1000); // configurar como cliente
-  //sendData("AT+CWJAP=\"Speedy-AC6CA3\",\"matiasmanda\"\r\n",8000); //SSID y contraseña para unirse a red 
-  sendData("AT+CIFSR\r\n",1000);    // obtener dirección IP
-  sendData("AT+CIPMUX=1\r\n",1000); // configurar para multiples conexiones
-  sendData("AT+CIPSERVER=1,80\r\n",1000);         // servidor en el puerto 80
+  sendCommand("AT+RST\r\n",2000,DEBUG);      // resetear módulo
+  sendCommand("AT+CWSAP=\"ARDUINO\",\"soa-criard-266\",3,2\r\n",8000,DEBUG); 
+  sendCommand("AT+CWMODE=2\r\n",1000,DEBUG); // configurar como cliente
+  //sendCommand("AT+CWJAP=\"Speedy-AC6CA3\",\"matiasmanda\"\r\n",8000); //SSID y contraseña para unirse a red 
+  sendCommand("AT+CIFSR\r\n",1000,DEBUG);    // obtener dirección IP
+  sendCommand("AT+CIPMUX=1\r\n",1000,DEBUG); // configurar para multiples conexiones
+  sendCommand("AT+CIPSERVER=1,80\r\n",1000,DEBUG);         // servidor en el puerto 80
 }
 
 
@@ -146,25 +146,95 @@ void escucharLlanto(){
 }
 
 /*
-Enviar comando al esp8266 y verificar la respuesta del módulo, todo esto dentro del tiempo timeout
-*/
-void sendData(String comando, const int timeout)
+Funciones de ESP8266
+**/
+String sendData(String command, const int timeout, boolean debug)
 {
- long int time = millis(); // medir el tiempo actual para verificar timeout
- 
- esp8266.print(comando); // enviar el comando al ESP8266
- 
- while( (time+timeout) > millis()) //mientras no haya timeout
- {
-     while(esp8266.available()) //mientras haya datos por leer
-     { 
-     // Leer los datos disponibles
-     char c = esp8266.read(); // leer el siguiente caracter
-     Serial.print(c);
-     }
- } 
- return;
+    String response = "";
+    
+    int dataSize = command.length();
+    char data[dataSize];
+    command.toCharArray(data,dataSize);
+           
+    esp8266.write(data,dataSize); // send the read character to the esp8266
+    if(debug)
+    {
+      Serial.println("\r\n====== HTTP Response From Arduino ======");
+      Serial.write(data,dataSize);
+      Serial.println("\r\n========================================");
+    }
+    
+    long int time = millis();
+    
+    while( (time+timeout) > millis())
+    {
+      while(esp8266.available())
+      {
+        
+        // The esp has data so display its output to the serial window 
+        char c = esp8266.read(); // read the next character.
+        response+=c;
+      }  
+    }
+    
+    if(debug)
+    {
+      Serial.print(response);
+    }
+    
+    return response;
 }
+ 
+
+void sendHTTPResponse(int connectionId, String content)
+{
+     // build HTTP response
+     String httpResponse;
+     String httpHeader;
+     // HTTP Header
+     httpHeader = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n"; 
+     httpHeader += "Content-Length: ";
+     httpHeader += content.length();
+     httpHeader += "\r\n";
+     httpHeader +="Connection: close\r\n\r\n";
+     httpResponse = httpHeader + content + " "; // There is a bug in this code: the last character of "content" is not sent, I cheated by adding this extra space
+     for(int i=0; i<= connectionId; i++){
+      sendCIPData(i,httpResponse);
+      delay(1500);
+     }
+}
+ 
+
+void sendCIPData(int connectionId, String data)
+{
+   String cipSend = "AT+CIPSEND=";
+   cipSend += connectionId;
+   cipSend += ",";
+   cipSend +=data.length();
+   cipSend +="\r\n";
+   sendCommand(cipSend,1000,DEBUG);
+   sendData(data,1000,DEBUG);
+}
+ 
+String sendCommand(String command, const int timeout, boolean debug)
+{
+    String response = "";          
+    esp8266.print(command); // send the read character to the esp8266   
+    long int time = millis();   
+    while( (time+timeout) > millis()){
+      while(esp8266.available()){
+        
+        // The esp has data so display its output to the serial window 
+        char c = esp8266.read(); // read the next character.
+        response+=c;
+      }  
+    }  
+    if(debug){
+      Serial.print(response);
+    }   
+    return response;
+}
+
 
 int analizarPeticion(){
 
@@ -186,33 +256,27 @@ String construirRespuesta(int state){
         //responder y cerrar la conexión para que el navegador no se quede cargando 
         // página web a enviar
         String webpage = "";
-        if (state==1) webpage += "<h1>Led = encendido!</h1>";
-        else { webpage += "<h1>Led = apagado!</h1>";}
+        if (state==1) webpage += "Led = encendido!";
+        else { webpage += "Led = apagado!";}
         
        return webpage;
        
   }
 bool enviarRespuesta(String respuesta){
-  
-      // comando para enviar página web
-      String comandoWebpage = "AT+CIPSEND=";
-      comandoWebpage+=conexionID;
-      comandoWebpage+=",";
-      comandoWebpage+=respuesta.length();
-      comandoWebpage+="\r\n";
-      sendData(comandoWebpage,1000);
-      sendData(respuesta,1000);
+      sendHTTPResponse(conexionID,respuesta);
   }
+  
 bool cerrarConexion(){
+  
          // comando para terminar conexión
        String comandoCerrar = "AT+CIPCLOSE=";
        comandoCerrar+=conexionID;
        comandoCerrar+="\r\n";
-       sendData(comandoCerrar,3000);
+       sendData(comandoCerrar,3000,DEBUG);
   }
+  
 bool detectarCliente(){
 
-  
   if(esp8266.find("+IPD,")) // revisar si el servidor recibio datos
      {
          delay(1500); // esperar que lleguen los datos hacia el buffer
@@ -220,7 +284,7 @@ bool detectarCliente(){
          int state = analizarPeticion();
          String respuesta = construirRespuesta(state);
          enviarRespuesta(respuesta);
-         cerrarConexion();
+         //cerrarConexion();
      }
   
   }
