@@ -2,6 +2,7 @@ package app.criard.criardapp;
 
 import android.app.Activity;
 import android.os.AsyncTask;
+import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -71,8 +72,9 @@ public class ClienteHttp_GET extends AsyncTask<String,String,String> {
             int responseCode = httpConnection.getResponseCode();
 
             //se analiza si la respuesta fue correcta
-            if (responseCode == HttpURLConnection.HTTP_OK)
+            if (responseCode == HttpURLConnection.HTTP_OK) {
                 result = convertInputStreamToString(new InputStreamReader(httpConnection.getInputStream())).toString();
+            }
             else
                 result = "NO_OK";
 
