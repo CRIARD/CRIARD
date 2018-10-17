@@ -70,8 +70,9 @@ void setup()
 
 void loop()
 {
-
-  detectarCliente();
+  if(esp8266.available()){
+      detectarCliente();
+  }
 
 }
 
@@ -166,16 +167,19 @@ void sendData(String comando, const int timeout)
 }
 
 int analizarPeticion(){
-  
-       esp8266.find("led="); // bucar el texto "led="
-       int state = (esp8266.read()-48); // Obtener el estado del pin a mostrar
-      
-       //digitalWrite(13, state); // Cambiar estado del pin
-       while(esp8266.available()){
-          char c = esp8266.read();
-          Serial.print(c);
-      } 
-      return state;
+
+     int state = 0; 
+     if(esp8266.find("led=")!= -1){
+        state = 1;
+      }  // bucar el texto "led="
+     //int state = (esp8266.read()-48); // Obtener el estado del pin a mostrar
+    
+     //digitalWrite(13, state); // Cambiar estado del pin
+     while(esp8266.available()){
+        char c = esp8266.read();
+        Serial.print(c);
+    } 
+    return state;
   }
 String construirRespuesta(int state){
   
