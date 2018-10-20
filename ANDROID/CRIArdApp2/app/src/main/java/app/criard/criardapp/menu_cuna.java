@@ -12,6 +12,9 @@ import android.os.Handler;
 import android.widget.Switch;
 import android.widget.Toast;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import app.criard.criardapp.InterfazAsyntask;
 import app.criard.criardapp.ClienteHttp_GET;
 public class menu_cuna extends Activity implements InterfazAsyntask{
@@ -35,7 +38,10 @@ public class menu_cuna extends Activity implements InterfazAsyntask{
         btn_led =  (Switch) findViewById(R.id.btn_led);
         btn_micro =  (Switch)findViewById(R.id.btn_micro);
         btn_servo =  (Switch)findViewById(R.id.btn_servo);
+
         btn_led.setOnCheckedChangeListener(checkedChangeListener);
+        btn_micro.setOnCheckedChangeListener(checkedChangeListener);
+        btn_servo.setOnCheckedChangeListener(checkedChangeListener);
     }
 
     private CompoundButton.OnCheckedChangeListener checkedChangeListener = new CompoundButton.OnCheckedChangeListener() {
@@ -43,6 +49,7 @@ public class menu_cuna extends Activity implements InterfazAsyntask{
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 
             switch (buttonView.getId()){
+
                 case R.id.btn_led:
                     if(isChecked){
                         uri =  ruta + "led=1";
@@ -54,9 +61,24 @@ public class menu_cuna extends Activity implements InterfazAsyntask{
                     break;
 
                 case R.id.btn_micro:
+                    if(isChecked){
+                        uri =  ruta + "micro=1";
+                        iniciarPeticion(uri);
+                    }else{
+                        uri =  ruta + "micro=0";
+                        iniciarPeticion(uri);
+                    }
                     break;
-                case R.id.btn_servo:
 
+                case R.id.btn_servo:
+                    if(isChecked){
+                        uri =  ruta + "servo=1";
+                        iniciarPeticion(uri);
+                    }else{
+                        uri =  ruta + "servo=0";
+                        iniciarPeticion(uri);
+                    }
+                    break;
             }
         }
     };
@@ -89,4 +111,15 @@ public class menu_cuna extends Activity implements InterfazAsyntask{
         Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_LONG).show();
     }
 
+    @Override
+    public void construirRespuesta(String input) throws JSONException {
+
+        JSONObject json = new JSONObject(input);
+
+        String sensor = json.getString("sensor");
+        Float valor = Float.parseFloat(json.getString("valor"));
+        String str = "Sensor: "+ sensor + ", Valor: " + valor;
+
+        mostrarToastMake(str);
+    }
 }
