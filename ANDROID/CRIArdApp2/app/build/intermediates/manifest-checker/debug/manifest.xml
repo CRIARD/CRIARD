@@ -8,6 +8,14 @@
         android:minSdkVersion="19"
         android:targetSdkVersion="28" />
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- To auto-complete the email text field in the login form with the user's emails -->
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.READ_PROFILE" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
     <application
         android:allowBackup="true"
         android:appComponentFactory="android.support.v4.app.CoreComponentFactory"
@@ -30,6 +38,15 @@
         <activity
             android:name="app.criard.criardapp.CRIArdMainActivity"
             android:label="@string/app_name" />
+        <activity
+            android:name="app.criard.criardapp.menu_hogar"
+            android:label="@string/title_activity_menu_hogar" />
+        <activity
+            android:name="app.criard.criardapp.menu_cuna"
+            android:label="@string/title_activity_menu_cuna" />
+        <activity
+            android:name="app.criard.criardapp.menu_config"
+            android:label="@string/title_activity_menu_config" />
 
         <provider
             android:name="com.android.tools.ir.server.InstantRunContentProvider"

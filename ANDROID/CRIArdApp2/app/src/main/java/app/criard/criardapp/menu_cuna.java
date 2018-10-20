@@ -5,19 +5,22 @@ import android.os.Bundle;
 import android.app.Activity;
 import android.util.Log;
 import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.ImageButton;
 
 import android.os.Handler;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import app.criard.criardapp.InterfazAsyntask;
 import app.criard.criardapp.ClienteHttp_GET;
 public class menu_cuna extends Activity implements InterfazAsyntask{
 
-    private ImageButton btn_led;
-    private ImageButton btn_micro;
-    private ImageButton btn_servo;
+    private Switch btn_led;
+    private Switch btn_micro;
+    private Switch btn_servo;
     private String ruta;
+    private String uri;
     private ClienteHttp_GET threadClienteGet;
     private Handler handler;
 
@@ -29,32 +32,37 @@ public class menu_cuna extends Activity implements InterfazAsyntask{
 
         Bundle bundle = getIntent().getExtras();
         ruta =(String) bundle.get("ruta");
-        btn_led =  (ImageButton)findViewById(R.id.btn_led);
-        btn_micro =  (ImageButton)findViewById(R.id.btn_micro);
-        btn_servo =  (ImageButton)findViewById(R.id.btn_servo);
-        btn_led.setOnClickListener(clickListener);
+        btn_led =  (Switch) findViewById(R.id.btn_led);
+        btn_micro =  (Switch)findViewById(R.id.btn_micro);
+        btn_servo =  (Switch)findViewById(R.id.btn_servo);
+        btn_led.setOnCheckedChangeListener(checkedChangeListener);
     }
 
-    private View.OnClickListener clickListener =  new View.OnClickListener(){
-
+    private CompoundButton.OnCheckedChangeListener checkedChangeListener = new CompoundButton.OnCheckedChangeListener() {
         @Override
-        public void onClick(View v) {
-            switch (v.getId()){
+        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+            switch (buttonView.getId()){
                 case R.id.btn_led:
-                     String uri =  ruta + "led=1";
-                     iniciarPeticion(uri);
-                     break;
+                    if(isChecked){
+                        uri =  ruta + "led=1";
+                        iniciarPeticion(uri);
+                    }else{
+                        uri =  ruta + "led=0";
+                        iniciarPeticion(uri);
+                    }
+                    break;
 
                 case R.id.btn_micro:
+                    break;
                 case R.id.btn_servo:
 
             }
         }
     };
-
     public void iniciarPeticion(final String uri){
 
-        Toast.makeText(getApplicationContext(),"Iniciando peticion " + uri + " ...",Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(),"Iniciando peticion ...",Toast.LENGTH_SHORT).show();
         //Se crea y ejecuta un Thread que envia una peticion POST al servidor para que encienda el led
         threadClienteGet = new ClienteHttp_GET(menu_cuna.this);
         threadClienteGet.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,uri);

@@ -119,14 +119,14 @@ public class ClienteHttp_GET extends AsyncTask<String,String,String> {
             //Si se ejecuto el Request correctamente,se llama al metodo de la activity Principal encargado
             // de actualizar el valor de texto mostrado en el TextView y actualizar el grafico del Velocimetro
 
-            //JSONObject json = new JSONObject(result);
+            JSONObject json = new JSONObject(result);
 
-            //Float valor = Float.parseFloat(json.getString("valor"));
-            //String str = "Sensor: " + json.getString("sensor")+ "\n Valor: " + result;
+            Float valor = Float.parseFloat(json.getString("led"));
+            String str = "Sensor:LED, Valor: " + valor;
 
-            caller.mostrarToastMake(result);/**Aca defino un estado de prueba**/
+            caller.mostrarToastMake(str);/**Aca defino un estado de prueba**/
         }
-        catch (Exception e) {
+        catch (JSONException e) {
             e.printStackTrace();
         }
     }
