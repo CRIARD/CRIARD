@@ -1,3 +1,5 @@
+#include <ArduinoJson.h>
+
 //Fuente https://programarfacil.com/tutoriales/fragmentos/servomotor-con-arduino/
 #include <Servo.h>
 #define ESPERA_LECTURAS 2000 // tiempo en milisegundos entre lecturas de la intensidad de la luz
@@ -32,15 +34,19 @@ unsigned int luminosidad;
 float coeficiente_porcentaje=100.0/1023.0; // El valor de la entrada analógica va de 0 a 1023 y se quiere convertir a porcentaje que va de cero a 100
 
 #include <SoftwareSerial.h>
-#include <ArduinoJson.h> 
 #include <SPI.h>
 #include <Ethernet.h>
  // arduino Rx (pin 2) ---- ESP8266 Tx
  // arduino Tx (pin 3) ---- ESP8266 Rx
 SoftwareSerial esp8266(2,3); 
+
 #define DEBUG true
 int conexionID = 0;
 String peticion = "";
+
+
+
+DynamicJsonBuffer jsonBuffer;
 void setup()
 {
   Serial.begin(115200);  // monitor serial del arduino
@@ -65,6 +71,7 @@ void setup()
   sendCommand("AT+CIFSR\r\n",1000,DEBUG);    // obtener dirección IP
   sendCommand("AT+CIPMUX=1\r\n",1000,DEBUG); // configurar para multiples conexiones
   sendCommand("AT+CIPSERVER=1,80\r\n",1000,DEBUG);         // servidor en el puerto 80
+  
 }
 
 
@@ -73,10 +80,46 @@ void loop()
   if(esp8266.available()){
       detectarCliente();
   }
-
+  amacarCuna();
 }
+bool detectarCliente(){
 
+  if(esp8266.find("+IPD,")) // revisar si el servidor recibio datos
+     {
+         delay(1500); // esperar que lleguen los datos hacia el buffer
+         int conexionID = esp8266.read()-48; // obtener el ID de la conexión para poder responder
+         int state = analizarPeticion();
+         String respuesta = construirRespuesta(state);
+         enviarRespuesta(respuesta);
+         //cerrarConexion();
+     }
+  
+  }
+int analizarPeticion(){
 
+     int state = 0; 
+     //Formato URL = http://192.168.4.1/led=1
+     if(esp8266.find("led=")!= -1){
+
+        state = (esp8266.read()-48); // Obtener el estado del pin a mostrar
+        Serial.print("EStado del state ");
+          Serial.println(state);
+        if(state==1){
+          prendoCuna =1;  
+        }else{
+          prendoCuna =0; 
+        }
+        
+      }  // bucar el texto "led="
+     
+    
+     //digitalWrite(13, state); // Cambiar estado del pin
+     while(esp8266.available()){
+        char c = esp8266.read();
+        Serial.print(c);
+    } 
+    return state;
+  }
 /**DECLARACION DE FUNCIONES**/
 void encenderLEDGradual(float luz){
   
@@ -236,30 +279,22 @@ String sendCommand(String command, const int timeout, boolean debug)
 }
 
 
-int analizarPeticion(){
 
-     int state = 0; 
-     if(esp8266.find("led=")!= -1){
-        state = 1;
-      }  // bucar el texto "led="
-     //int state = (esp8266.read()-48); // Obtener el estado del pin a mostrar
-    
-     //digitalWrite(13, state); // Cambiar estado del pin
-     while(esp8266.available()){
-        char c = esp8266.read();
-        Serial.print(c);
-    } 
-    return state;
-  }
 String construirRespuesta(int state){
-  
+  String output;
+  String strState =  String(state);
+  String input = "{\"led\":\""+strState+"\", \"humedad\":\"80%\"}";
+  JsonObject& root = jsonBuffer.parseObject(input);
         //responder y cerrar la conexión para que el navegador no se quede cargando 
         // página web a enviar
         String webpage = "";
-        if (state==1) webpage += "Led = encendido!";
+        if (state==1){
+          root[String("led")] = 1;
+          //webpage += "Led = encendido!";
+        }
         else { webpage += "Led = apagado!";}
-        
-       return webpage;
+        root.printTo(output);
+       return output;
        
   }
 bool enviarRespuesta(String respuesta){
@@ -275,16 +310,4 @@ bool cerrarConexion(){
        sendData(comandoCerrar,3000,DEBUG);
   }
   
-bool detectarCliente(){
 
-  if(esp8266.find("+IPD,")) // revisar si el servidor recibio datos
-     {
-         delay(1500); // esperar que lleguen los datos hacia el buffer
-         int conexionID = esp8266.read()-48; // obtener el ID de la conexión para poder responder
-         int state = analizarPeticion();
-         String respuesta = construirRespuesta(state);
-         enviarRespuesta(respuesta);
-         //cerrarConexion();
-     }
-  
-  }
