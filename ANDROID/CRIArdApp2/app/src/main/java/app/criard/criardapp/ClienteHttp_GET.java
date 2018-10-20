@@ -121,8 +121,9 @@ public class ClienteHttp_GET extends AsyncTask<String,String,String> {
 
             JSONObject json = new JSONObject(result);
 
-            Float valor = Float.parseFloat(json.getString("led"));
-            String str = "Sensor:LED, Valor: " + valor;
+            String sensor = json.getString("sensor");
+            Float valor = Float.parseFloat(json.getString("valor"));
+            String str = "Sensor: "+ sensor + ", Valor: " + valor;
 
             caller.mostrarToastMake(str);/**Aca defino un estado de prueba**/
         }
