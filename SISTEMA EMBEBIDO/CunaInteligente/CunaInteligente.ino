@@ -293,8 +293,8 @@ String construirRespuesta(int state){
           //webpage += "Led = encendido!";
         }
         else { webpage += "Led = apagado!";}
-        root.printTo(output);
-       return output;
+        
+       return input;
        
   }
 bool enviarRespuesta(String respuesta){
