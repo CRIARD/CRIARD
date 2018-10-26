@@ -40,7 +40,7 @@ public class CRIArdMainActivity extends AppCompatActivity {
                     return true;
                 case R.id.navigation_config:
 
-                    intent = new Intent(CRIArdMainActivity.this,menu_config.class);
+                    intent = new Intent(CRIArdMainActivity.this,MainActivity.class);
                     intent.putExtra("ruta",ruta);
                     startActivity(intent);
                     finish();
