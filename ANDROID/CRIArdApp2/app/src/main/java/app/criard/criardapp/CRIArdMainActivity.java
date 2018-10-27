@@ -1,20 +1,31 @@
 package app.criard.criardapp;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.design.widget.BottomNavigationView;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.view.MenuItem;
 import android.widget.TextView;
 
-public class CRIArdMainActivity extends AppCompatActivity {
+import java.text.DecimalFormat;
+
+public class CRIArdMainActivity extends AppCompatActivity implements SensorEventListener{
 
     private TextView mTextMessage;
+    private SensorManager mSensorManager;
+    private TextView acelerometro;
     private String puerto;
     private String ip;
     private String ruta;
     private Intent intent;
+    //DecimalFormat dosdecimales = new DecimalFormat("###.###");
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -59,12 +70,15 @@ public class CRIArdMainActivity extends AppCompatActivity {
         Bundle bundle =  getIntent().getExtras();
         this.ip = (String) bundle.get("ip");
         this.puerto = (String) bundle.get("puerto");
-        mTextMessage = (TextView) findViewById(R.id.message);
+        mTextMessage = (TextView) findViewById(R.id.msg);
 
         mTextMessage.setText("Se encuentra conectado a la direccion: " + this.ip + " puerto: " + this.puerto);
         armarRuta();
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+
+        acelerometro = (TextView) findViewById(R.id.acelerometro);
     }
 
     private void armarRuta(){
@@ -72,4 +86,88 @@ public class CRIArdMainActivity extends AppCompatActivity {
         this.ruta = "http://" + this.ip  + "/";
     }
 
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        String txt = "";
+
+        // Cada sensor puede lanzar un thread que pase por aqui
+        // Para asegurarnos ante los accesos simult�neos sincronizamos esto
+
+        synchronized (this) {
+            Log.d("sensor", event.sensor.getName());
+
+            switch (event.sensor.getType()) {
+
+                case Sensor.TYPE_ACCELEROMETER:
+
+                    if ((event.values[0] > 15) || (event.values[1] > 15) || (event.values[2] > 15)) {
+                        acelerometro.setBackgroundColor(Color.parseColor("#cf091c"));
+                        acelerometro.setText("Sensor detectado: ACELEROMETRO");
+                    }
+                    break;
+
+            }
+        }
+    }
+
+    // Metodo para iniciar el acceso a los sensores
+    protected void Ini_Sensores()
+    {
+        mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),   SensorManager.SENSOR_DELAY_NORMAL);
+
+    }
+
+    // Metodo para parar la escucha de los sensores
+    private void Parar_Sensores()
+    {
+
+        mSensorManager.unregisterListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
+        mSensorManager.unregisterListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
+    @Override
+    protected void onStop()
+    {
+
+        Parar_Sensores();
+
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        Parar_Sensores();
+
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        Parar_Sensores();
+
+        super.onPause();
+    }
+
+    @Override
+    protected void onRestart()
+    {
+        Ini_Sensores();
+
+        super.onRestart();
+    }
+
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+
+        Ini_Sensores();
+    }
 }
