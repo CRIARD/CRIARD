@@ -45,4 +45,12 @@
         android:layout_alignParentTop="true"
         android:layout_marginTop="218dp" />
 
+    <TextView
+        android:id="@+id/luminosidad"
+        android:layout_width="350dp"
+        android:layout_height="72dp"
+        android:layout_alignStart="@+id/acelerometro"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="192dp" />
+
 </RelativeLayout>

@@ -22,7 +22,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     private SensorManager mSensorManager;
     private TextView acelerometro;
     private TextView proximity;
-    //private TextView detecta;
+    private TextView luminosidad;
     private String puerto;
     private String ip;
     private String ruta;
@@ -82,7 +82,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
 
         acelerometro = (TextView) findViewById(R.id.acelerometro);
         proximity    = (TextView) findViewById(R.id.proximity);
-        //detecta      = (TextView) findViewById(R.id.detecta);
+        luminosidad  = (TextView) findViewById(R.id.luminosidad);
 
 
     }
@@ -121,9 +121,24 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                     // Si detecta 0 lo represento
                     if( event.values[0] == 0 )
                     {
-                        proximity.setBackgroundColor(Color.parseColor("#FAFAFA"));
+                        proximity.setBackgroundColor(Color.parseColor("#7C2F8E"));
                         proximity.setText("Proximidad Detectada");
                     }
+                    else {
+                        proximity.setBackgroundColor(Color.parseColor("#FAFAFA"));
+                        proximity.setText(txt);
+                    }
+                    break;
+
+                case Sensor.TYPE_LIGHT :
+                    txt += "Luminosidad\n";
+                    txt += event.values[0] + " Lux \n";
+
+                    if( event.values[0] < 90)
+                        luminosidad.setBackgroundColor(Color.parseColor("#256F3E"));
+                    else
+                        luminosidad.setBackgroundColor(Color.parseColor("#FAFAFA"));
+                    luminosidad.setText(txt);
                     break;
             }
         }
@@ -134,6 +149,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     {
         mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),   SensorManager.SENSOR_DELAY_NORMAL);
         mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY),       SensorManager.SENSOR_DELAY_NORMAL);
+        mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT),           SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     // Metodo para parar la escucha de los sensores
@@ -142,6 +158,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
 
         mSensorManager.unregisterListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
         mSensorManager.unregisterListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY));
+        mSensorManager.unregisterListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT));
     }
 
     @Override
