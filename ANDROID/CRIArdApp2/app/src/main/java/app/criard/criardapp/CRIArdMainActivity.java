@@ -21,6 +21,8 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     private TextView mTextMessage;
     private SensorManager mSensorManager;
     private TextView acelerometro;
+    private TextView proximity;
+    //private TextView detecta;
     private String puerto;
     private String ip;
     private String ruta;
@@ -79,6 +81,10 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
         acelerometro = (TextView) findViewById(R.id.acelerometro);
+        proximity    = (TextView) findViewById(R.id.proximity);
+        //detecta      = (TextView) findViewById(R.id.detecta);
+
+
     }
 
     private void armarRuta(){
@@ -106,6 +112,19 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                     }
                     break;
 
+                case Sensor.TYPE_PROXIMITY :
+                    txt += "proximity\n";
+                    txt += event.values[0] + "\n";
+
+                    proximity.setText(txt);
+
+                    // Si detecta 0 lo represento
+                    if( event.values[0] == 0 )
+                    {
+                        proximity.setBackgroundColor(Color.parseColor("#FAFAFA"));
+                        proximity.setText("Proximidad Detectada");
+                    }
+                    break;
             }
         }
     }
@@ -114,7 +133,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     protected void Ini_Sensores()
     {
         mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),   SensorManager.SENSOR_DELAY_NORMAL);
-
+        mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY),       SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     // Metodo para parar la escucha de los sensores
@@ -122,7 +141,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     {
 
         mSensorManager.unregisterListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
-        mSensorManager.unregisterListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE));
+        mSensorManager.unregisterListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY));
     }
 
     @Override
