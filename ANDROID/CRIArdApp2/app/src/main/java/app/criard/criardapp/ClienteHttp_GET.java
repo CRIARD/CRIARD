@@ -62,8 +62,8 @@ public class ClienteHttp_GET extends AsyncTask<String,String,String> {
             httpConnection.setRequestProperty("Content-length", "0");
             httpConnection.setUseCaches(false);
             httpConnection.setAllowUserInteraction(false);
-            httpConnection.setConnectTimeout(100000);
-            httpConnection.setReadTimeout(100000);
+            httpConnection.setConnectTimeout(2000);
+            httpConnection.setReadTimeout(2000);
 
             //se envia el request al Servidor
             httpConnection.connect();

@@ -5,8 +5,8 @@
 #define ESPERA_LECTURAS 2000 // tiempo en milisegundos entre lecturas de la intensidad de la luz
 //Variables del Servo
 #define PinServo      9   //Pin donde está conectado el servo 
-#define ServoCerrado  0   // posición inicial 
-#define ServoAbierto  180  // posición de 0 grados
+#define ServoCerrado  75   // posición inicial 
+#define ServoAbierto  105  // posición de 0 grados
 int tiempoInicialAmaque = 0;
 int tiempoAmaque = 0;
 int prendoCuna = 0;
@@ -39,7 +39,8 @@ float coeficiente_porcentaje=100.0/1023.0; // El valor de la entrada analógica 
  // arduino Rx (pin 2) ---- ESP8266 Tx
  // arduino Tx (pin 3) ---- ESP8266 Rx
 SoftwareSerial esp8266(2,3); 
-
+int tiempoInicioWIFI = 0;
+int tiempoWIFI = 0;
 #define DEBUG true
 int conexionID = 0;
 String peticion = "";
@@ -58,6 +59,7 @@ void setup()
   pinMode(PinLDR,INPUT); //Defino el tipo de pin para el LDR (Entrada)
   pinMode(PinLED,OUTPUT); //Defino el tipo de pin para el LED (Salida)
   
+  tiempoInicioWIFI = millis();
   tiempoInicialAmaque = millis();
   tiempoSilencio = millis();
   tiempoUltimoLlanto = millis();
@@ -84,40 +86,46 @@ void loop()
 }
 bool detectarCliente(){
 
+ //tiempoWIFI = millis() - tiempoInicioWIFI;
+         
+ //if(tiempoWIFI > 1500){
+ //Serial.println("Paso tiempo de espera...");
+  
   if(esp8266.find("+IPD,")) // revisar si el servidor recibio datos
      {
-         delay(1500); // esperar que lleguen los datos hacia el buffer
-         int conexionID = esp8266.read()-48; // obtener el ID de la conexión para poder responder
-         int state = analizarPeticion();
-         String respuesta = construirRespuesta(state);
-         enviarRespuesta(respuesta);
-         //cerrarConexion();
-     }
+        
+           //delay(1500); // esperar que lleguen los datos hacia el buffer
+           conexionID = esp8266.read()-48; // obtener el ID de la conexión para poder responder
+           int state = analizarPeticion();
+           String respuesta = construirRespuesta(state);
+           enviarRespuesta(respuesta);
+           tiempoInicioWIFI = millis();
+           
+     }   
+     
   
-  }
+  //}
+}
 int analizarPeticion(){
 
      int state = 0; 
      //Formato URL = http://192.168.4.1/led=1
-     if(esp8266.find("led=")!= -1){
+     if(esp8266.find("servo=")!= -1){
 
         state = (esp8266.read()-48); // Obtener el estado del pin a mostrar
-        Serial.print("EStado del state ");
-          Serial.println(state);
+        Serial.print("Estado recibido: ");
+        Serial.println(esp8266.read());
+        Serial.print("Estado del state ");
+        Serial.println(state);
         if(state==1){
-          prendoCuna =1;  
+          prendoCuna = 1;  
         }else{
-          prendoCuna =0; 
+          prendoCuna = 0; 
         }
         
-      }  // bucar el texto "led="
-     
-    
-     //digitalWrite(13, state); // Cambiar estado del pin
-     while(esp8266.available()){
-        char c = esp8266.read();
-        Serial.print(c);
-    } 
+      } else{
+          prendoCuna = 0; 
+        }
     return state;
   }
 /**DECLARACION DE FUNCIONES**/
@@ -241,10 +249,10 @@ void sendHTTPResponse(int connectionId, String content)
      httpHeader += "\r\n";
      httpHeader +="Connection: close\r\n\r\n";
      httpResponse = httpHeader + content + " "; // There is a bug in this code: the last character of "content" is not sent, I cheated by adding this extra space
-     for(int i=0; i<= connectionId; i++){
-      sendCIPData(i,httpResponse);
-      delay(1500);
-     }
+     //for(int i=0; i<= connectionId; i++){
+     sendCIPData(connectionId,httpResponse);
+      //delay(1500);
+     //}
 }
  
 
@@ -255,8 +263,8 @@ void sendCIPData(int connectionId, String data)
    cipSend += ",";
    cipSend +=data.length();
    cipSend +="\r\n";
-   sendCommand(cipSend,1000,DEBUG);
-   sendData(data,1000,DEBUG);
+   sendCommand(cipSend,2000,DEBUG);
+   sendData(data,2200,DEBUG);
 }
  
 String sendCommand(String command, const int timeout, boolean debug)
@@ -301,13 +309,21 @@ bool enviarRespuesta(String respuesta){
       sendHTTPResponse(conexionID,respuesta);
   }
   
-bool cerrarConexion(){
+bool cerrarConexion(int connectionId){
   
-         // comando para terminar conexión
+       // comando para terminar conexión
        String comandoCerrar = "AT+CIPCLOSE=";
-       comandoCerrar+=conexionID;
+       comandoCerrar+=connectionId;
        comandoCerrar+="\r\n";
        sendData(comandoCerrar,3000,DEBUG);
   }
+void resetWIFI(){
+    sendCommand("AT+RST\r\n",2000,DEBUG);      // resetear módulo
+    sendCommand("AT+CWSAP=\"ARDUINO\",\"soa-criard-266\",3,2\r\n",8000,DEBUG); 
+    sendCommand("AT+CWMODE=2\r\n",2000,DEBUG); // configurar como cliente
+    //sendCommand("AT+CWJAP=\"Speedy-AC6CA3\",\"matiasmanda\"\r\n",8000); //SSID y contraseña para unirse a red 
+    sendCommand("AT+CIFSR\r\n",2000,DEBUG);    // obtener dirección IP
+    sendCommand("AT+CIPMUX=1\r\n",2000,DEBUG); // configurar para multiples conexiones
+    sendCommand("AT+CIPSERVER=1,80\r\n",2000,DEBUG);         // servidor en el puerto 80
   
-
+  }

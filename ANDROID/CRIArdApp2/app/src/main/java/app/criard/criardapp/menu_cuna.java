@@ -39,6 +39,9 @@ public class menu_cuna extends Activity implements InterfazAsyntask{
         btn_micro =  (Switch)findViewById(R.id.btn_micro);
         btn_servo =  (Switch)findViewById(R.id.btn_servo);
 
+        btn_servo.setChecked(false);
+        btn_micro.setChecked(false);
+        btn_led.setChecked(false);
         btn_led.setOnCheckedChangeListener(checkedChangeListener);
         btn_micro.setOnCheckedChangeListener(checkedChangeListener);
         btn_servo.setOnCheckedChangeListener(checkedChangeListener);
