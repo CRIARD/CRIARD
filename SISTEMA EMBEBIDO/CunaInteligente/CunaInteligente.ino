@@ -44,7 +44,7 @@ int tiempoWIFI = 0;
 #define DEBUG true
 int conexionID = 0;
 String peticion = "";
-
+bool estadoConexion = false;
 
 
 DynamicJsonBuffer jsonBuffer;
@@ -79,32 +79,40 @@ void setup()
 
 void loop()
 {
-  if(esp8266.available()){
-      detectarCliente();
-  }
+  detectarCliente();
+  if(!estadoConexion){
+    Serial.println("Esperando proximo cliente...");
+    estadoConexion = true;
+    } 
   amacarCuna();
 }
 bool detectarCliente(){
 
- //tiempoWIFI = millis() - tiempoInicioWIFI;
-         
- //if(tiempoWIFI > 1500){
- //Serial.println("Paso tiempo de espera...");
+  if(esp8266.available()){
+    
+    Serial.println("Cliente conectado...");
+    estadoConexion = false;
+
   
   if(esp8266.find("+IPD,")) // revisar si el servidor recibio datos
      {
-        
+           Serial.println("Peticion detectada...");
            //delay(1500); // esperar que lleguen los datos hacia el buffer
            conexionID = esp8266.read()-48; // obtener el ID de la conexión para poder responder
+           Serial.println("Analizando peticion...");
            int state = analizarPeticion();
+           Serial.println("Construyendo respuesta...");
            String respuesta = construirRespuesta(state);
+           Serial.println("Enviando respuesta...");
            enviarRespuesta(respuesta);
-           tiempoInicioWIFI = millis();
+           Serial.println("Cerrando conexion...");
+           cerrarConexion(conexionID);
+           //tiempoInicioWIFI = millis();
            
-     }   
-     
-  
-  //}
+     }else{
+          Serial.println("No se detecto peticion...");
+        }     
+  }
 }
 int analizarPeticion(){
 
@@ -113,13 +121,12 @@ int analizarPeticion(){
      if(esp8266.find("servo=")!= -1){
 
         state = (esp8266.read()-48); // Obtener el estado del pin a mostrar
-        Serial.print("Estado recibido: ");
-        Serial.println(esp8266.read());
-        Serial.print("Estado del state ");
-        Serial.println(state);
-        if(state==1){
+      if(state==1){
+          Serial.println("Cuna encendida...");
+          tiempoInicialAmaque = millis();
           prendoCuna = 1;  
         }else{
+          Serial.println("Cuna apagada...");
           prendoCuna = 0; 
         }
         
