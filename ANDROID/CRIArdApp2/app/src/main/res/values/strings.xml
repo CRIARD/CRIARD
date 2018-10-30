@@ -1,5 +1,6 @@
 <resources>
     <string name="app_name">CRIArdApp</string>
+
     <string name="title_home">Hogar</string>
     <string name="title_cuna">Cuna Inteligente</string>
     <string name="title_config">Configuración</string>
@@ -7,4 +8,20 @@
     <string name="title_activity_menu_hogar">menu_hogar</string>
     <string name="title_activity_menu_cuna">menu_cuna</string>
     <string name="title_activity_menu_config">menu_config</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="text_bluetooth_off">Bluetooth Deshabilitado</string>
+    <string name="text_bluetooth_on">Bluetooth Habilitado</string>
+
+    <string name="text_enable">Activar</string>
+    <string name="text_disable">Desactivar</string>
+
+    <string name="text_view_paired">Dispositivos emparejados</string>
+    <string name="text_scan_devices">Buscar dispositivos</string>
+    <string name="text_stop_scan">Buscar dispositivos</string>
+
+    <string name="text_list_paired_devices">Dispositivos emparejados</string>
+    <string name="text_list_devices">Lista de dispositivos</string>
+
+    <string name="text_pair">Emparejar</string>
 </resources>
