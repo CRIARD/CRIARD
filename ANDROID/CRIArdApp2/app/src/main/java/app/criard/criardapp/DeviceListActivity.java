@@ -44,6 +44,7 @@ public class DeviceListActivity extends Activity{
 
         //defino un listener en el boton emparejar del listview
         mAdapter.setListener(listenerBotonEmparejar);
+        mAdapter.setListenerIniciar(iniciarButtonClickListener);
         mListView.setAdapter(mAdapter);
 
         //se definen un broadcastReceiver que captura el broadcast del SO cuando captura los siguientes eventos:
@@ -111,6 +112,23 @@ public class DeviceListActivity extends Activity{
             }
         }
     };
+
+    private DeviceListAdapter.IniciarButtonClickListener iniciarButtonClickListener = new DeviceListAdapter.IniciarButtonClickListener() {
+
+        @Override
+        public void IniciarButtonClick(int position) {
+            BluetoothDevice dispositivo = (BluetoothDevice) mAdapter.getItem(posicionListBluethoot);
+
+            //se inicia el Activity de comunicacion con el bluethoot, para transferir los datos.
+            //Para eso se le envia como parametro la direccion(MAC) del bluethoot Arduino
+            String direccionBluethoot = dispositivo.getAddress();
+            Intent i = new Intent(DeviceListActivity.this, CRIArdMainActivity.class);
+            i.putExtra("Direccion_Bluethoot", direccionBluethoot);
+
+            startActivity(i);
+        }
+    };
+
 
     //Handler que captura los brodacast que emite el SO al ocurrir los eventos del bluethoot
     private final BroadcastReceiver mPairReceiver = new BroadcastReceiver() {
