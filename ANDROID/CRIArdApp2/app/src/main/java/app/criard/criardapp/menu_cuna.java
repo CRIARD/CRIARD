@@ -4,9 +4,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Activity;
 import android.util.Log;
-import android.view.View;
 import android.widget.CompoundButton;
-import android.widget.ImageButton;
 
 import android.os.Handler;
 import android.widget.Switch;
@@ -15,8 +13,6 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import app.criard.criardapp.InterfazAsyntask;
-import app.criard.criardapp.ClienteHttp_GET;
 public class menu_cuna extends Activity implements InterfazAsyntask{
 
     private Switch btn_led;
@@ -24,7 +20,6 @@ public class menu_cuna extends Activity implements InterfazAsyntask{
     private Switch btn_servo;
     private String ruta;
     private String uri;
-    private ClienteHttp_GET threadClienteGet;
     private Handler handler;
 
     @Override
@@ -33,8 +28,8 @@ public class menu_cuna extends Activity implements InterfazAsyntask{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_menu_cuna);
 
-        Bundle bundle = getIntent().getExtras();
-        ruta =(String) bundle.get("ruta");
+        //Bundle bundle = getIntent().getExtras();
+        //ruta =(String) bundle.get("ruta");
         btn_led =  (Switch) findViewById(R.id.btn_led);
         btn_micro =  (Switch)findViewById(R.id.btn_micro);
         btn_servo =  (Switch)findViewById(R.id.btn_servo);
@@ -87,12 +82,7 @@ public class menu_cuna extends Activity implements InterfazAsyntask{
     };
     public void iniciarPeticion(final String uri){
 
-        Toast.makeText(getApplicationContext(),"Iniciando peticion ...",Toast.LENGTH_SHORT).show();
-        //Se crea y ejecuta un Thread que envia una peticion POST al servidor para que encienda el led
-        threadClienteGet = new ClienteHttp_GET(menu_cuna.this);
-        threadClienteGet.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,uri);
 
-        //Toast.makeText(getApplicationContext(),"Encendido",Toast.LENGTH_SHORT).show();
     }
 
     //Metodo que es llamada cuando se cierra la APP

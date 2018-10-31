@@ -8,13 +8,46 @@
     tools:context=".CRIArdMainActivity">
 
     <TextView
-        android:id="@+id/acelerometro"
-        android:layout_width="353dp"
-        android:layout_height="77dp"
-        android:layout_above="@+id/proximity"
-        android:layout_centerHorizontal="true"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:id="@+id/msg"
+        android:layout_width="match_parent"
+        android:layout_height="87dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:textSize="18sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="105dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="158dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/luminosidad"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@+id/proximity"
+            android:layout_centerHorizontal="true"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/acelerometro"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@+id/proximity"
+            android:layout_centerHorizontal="true"
+            android:layout_weight="1"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/proximity"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true"
+            android:layout_weight="1" />
+    </LinearLayout>
 
     <android.support.design.widget.BottomNavigationView
         android:id="@+id/navigation"
@@ -28,33 +61,13 @@
         app:layout_constraintRight_toRightOf="parent"
         app:menu="@menu/navigation" />
 
-    <TextView
-        android:id="@+id/msg"
-        android:layout_width="match_parent"
-        android:layout_height="87dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:textSize="18sp" />
-
-    <TextView
-        android:id="@+id/proximity"
-        android:layout_width="350dp"
-        android:layout_height="71dp"
-        android:layout_centerInParent="true" />
-
-    <TextView
-        android:id="@+id/luminosidad"
-        android:layout_width="350dp"
-        android:layout_height="72dp"
-        android:layout_below="@+id/proximity"
-        android:layout_centerHorizontal="true" />
-
     <Button
         android:id="@+id/btn_encender"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_above="@+id/navigation"
-        android:layout_alignStart="@+id/acelerometro"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="89dp"
         android:text="Encender" />
 
     <Button
@@ -62,7 +75,16 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_above="@+id/navigation"
-        android:layout_alignEnd="@+id/acelerometro"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="89dp"
         android:text="Apagar" />
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="match_parent"
+        android:layout_height="217dp"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/msg"
+        app:srcCompat="@mipmap/bebe_fondo" />
 
 </RelativeLayout>
