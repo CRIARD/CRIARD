@@ -33,14 +33,10 @@ import java.io.OutputStream;
 import java.util.UUID;
 public class CRIArdMainActivity extends AppCompatActivity implements SensorEventListener{
 
-    private TextView mTextMessage;
     private SensorManager mSensorManager;
     private TextView acelerometro;
     private TextView proximity;
     private TextView luminosidad;
-    private String puerto;
-    private String ip;
-    private String ruta;
     private Intent intent;
     private Button btn_encender;
     private Button btn_apagar;
@@ -69,7 +65,6 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                 case R.id.navigation_home:
 
                     intent = new Intent(CRIArdMainActivity.this,menu_hogar.class);
-                    intent.putExtra("ruta",ruta);
                     startActivity(intent);
                     finish();
                     //mTextMessage.setText(R.string.title_home);
@@ -77,7 +72,6 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                 case R.id.navigation_cuna:
 
                     intent = new Intent(CRIArdMainActivity.this,menu_cuna.class);
-                    intent.putExtra("ruta",ruta);
                     startActivity(intent);
                     finish();
                     //mTextMessage.setText(R.string.title_cuna);
@@ -85,7 +79,6 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                 case R.id.navigation_config:
 
                     intent = new Intent(CRIArdMainActivity.this,MainActivity.class);
-                    intent.putExtra("ruta",ruta);
                     startActivity(intent);
                     finish();
                     //mTextMessage.setText(R.string.title_config);
@@ -100,13 +93,6 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_criard_main);
 
-        Bundle bundle =  getIntent().getExtras();
-        this.ip = (String) bundle.get("ip");
-        this.puerto = (String) bundle.get("puerto");
-        mTextMessage = (TextView) findViewById(R.id.msg);
-
-        mTextMessage.setText("Se encuentra conectado a la direccion: " + this.ip + " puerto: " + this.puerto);
-        armarRuta();
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -146,11 +132,6 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         }
     };
 
-    private void armarRuta(){
-
-        this.ruta = "http://" + this.ip  + "/";
-    }
-
     @Override
     public void onSensorChanged(SensorEvent event) {
         String txt = "";
@@ -174,10 +155,10 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                     break;
 
                 case Sensor.TYPE_PROXIMITY :
-                    txt += "proximity\n";
-                    txt += event.values[0] + "\n";
+                    //txt += "proximity\n";
+                    //txt += event.values[0] + "\n";
 
-                    proximity.setText(txt);
+                    //proximity.setText(txt);
 
                     // Si detecta 0 lo represento
                     if( event.values[0] == 0 )
@@ -192,8 +173,8 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                     break;
 
                 case Sensor.TYPE_LIGHT :
-                    txt += "Luminosidad\n";
-                    txt += event.values[0] + " Lux \n";
+                    //txt += "Luminosidad\n";
+                    //txt += event.values[0] + " Lux \n";
 
                     if( event.values[0] < 90)
                         luminosidad.setBackgroundColor(Color.parseColor("#256F3E"));
