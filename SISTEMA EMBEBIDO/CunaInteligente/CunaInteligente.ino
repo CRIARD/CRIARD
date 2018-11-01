@@ -1,3 +1,4 @@
+#include <SoftwareSerial.h>
 #include <ArduinoJson.h>
 
 //Fuente https://programarfacil.com/tutoriales/fragmentos/servomotor-con-arduino/
@@ -38,103 +39,86 @@ float coeficiente_porcentaje=100.0/1023.0; // El valor de la entrada analógica 
 #include <Ethernet.h>
  // arduino Rx (pin 2) ---- ESP8266 Tx
  // arduino Tx (pin 3) ---- ESP8266 Rx
-SoftwareSerial esp8266(2,3); 
+
 int tiempoInicioWIFI = 0;
 int tiempoWIFI = 0;
 #define DEBUG true
 int conexionID = 0;
 String peticion = "";
 bool estadoConexion = false;
+//Al utilizar la biblioteca SoftwareSerial los pines RX y TX para la transmicion serie de Bluethoot se pueden cambiar mapear a otros pines.
+//Sino se utiliza esta bibioteca esto no se puede realizar y se debera conectar al pin 0 y 1, conexion Serie no pudiendo imprmir por el monitor serie
+//Al estar estos ocupados.
+SoftwareSerial BTserial(10,11); // RX | TX
 
+char c = ' ';
 
-DynamicJsonBuffer jsonBuffer;
+int pinLed= 3;
+
 void setup()
 {
-  Serial.begin(115200);  // monitor serial del arduino
-  esp8266.begin(115200); // baud rate del ESP8255
+    //Se configura la velocidad del puerto serie para poder imprimir en el puerto Serie
+    Serial.begin(9600);
+    Serial.println("Inicializando configuracion del HC-05...");
+  
+    //Se configura la velocidad de transferencia de datos entre el Bluethoot  HC05 y el de Android.
+    BTserial.begin(9600); 
+    Serial.println("Esperando Comandos AT...");
 
-  servoMotor.attach(PinServo); // el servo trabajará desde el pin definido como PinServo
-  servoMotor.write(ServoCerrado);   // Desplazamos a la posición 0
-
-  pinMode(PinLDR,INPUT); //Defino el tipo de pin para el LDR (Entrada)
-  pinMode(PinLED,OUTPUT); //Defino el tipo de pin para el LED (Salida)
+    servoMotor.attach(PinServo); // el servo trabajará desde el pin definido como PinServo
+    servoMotor.write(ServoCerrado);   // Desplazamos a la posición 0
   
-  tiempoInicioWIFI = millis();
-  tiempoInicialAmaque = millis();
-  tiempoSilencio = millis();
-  tiempoUltimoLlanto = millis();
-  tiempoInicioProm = millis();
-  tiempoFinProm = 0; 
-  
-  sendCommand("AT+RST\r\n",2000,DEBUG);      // resetear módulo
-  sendCommand("AT+CWSAP=\"ARDUINO\",\"soa-criard-266\",3,2\r\n",8000,DEBUG); 
-  sendCommand("AT+CWMODE=2\r\n",1000,DEBUG); // configurar como cliente
-  //sendCommand("AT+CWJAP=\"Speedy-AC6CA3\",\"matiasmanda\"\r\n",8000); //SSID y contraseña para unirse a red 
-  sendCommand("AT+CIFSR\r\n",1000,DEBUG);    // obtener dirección IP
-  sendCommand("AT+CIPMUX=1\r\n",1000,DEBUG); // configurar para multiples conexiones
-  sendCommand("AT+CIPSERVER=1,80\r\n",1000,DEBUG);         // servidor en el puerto 80
-  
+    pinMode(PinLDR,INPUT); //Defino el tipo de pin para el LDR (Entrada)
+    pinMode(PinLED,OUTPUT); //Defino el tipo de pin para el LED (Salida)
+    
+    tiempoInicioWIFI = millis();
+    tiempoInicialAmaque = millis();
+    tiempoSilencio = millis();
+    tiempoUltimoLlanto = millis();
+    tiempoInicioProm = millis();
+    tiempoFinProm = 0; 
+    pinMode(pinLed, OUTPUT);
 }
-
-
+ 
 void loop()
 {
-  detectarCliente();
-  if(!estadoConexion){
-    Serial.println("Esperando proximo cliente...");
-    estadoConexion = true;
-    } 
-  amacarCuna();
-}
-bool detectarCliente(){
-
-  if(esp8266.available()){
+   //sI reciben datos del HC05 
+    if (BTserial.available())
+    { 
+        //se los lee y se los muestra en el monitor serie
+        c = BTserial.read();
+        //Serial.write("leyendoAA:");
+        Serial.write(c);
+        analizarDato(c);
+    }
+    amacarCuna();
+    //Si se ingresa datos por teclado en el monitor serie 
+    if (Serial.available())
+    {
+        //se los lee y se los envia al HC05
+        c =  Serial.read();
+        Serial.write(c);
+        BTserial.write(c); 
+    }
     
-    Serial.println("Cliente conectado...");
-    estadoConexion = false;
-
-  
-  if(esp8266.find("+IPD,")) // revisar si el servidor recibio datos
-     {
-           Serial.println("Peticion detectada...");
-           //delay(1500); // esperar que lleguen los datos hacia el buffer
-           conexionID = esp8266.read()-48; // obtener el ID de la conexión para poder responder
-           Serial.println("Analizando peticion...");
-           int state = analizarPeticion();
-           Serial.println("Construyendo respuesta...");
-           String respuesta = construirRespuesta(state);
-           Serial.println("Enviando respuesta...");
-           enviarRespuesta(respuesta);
-           Serial.println("Cerrando conexion...");
-           cerrarConexion(conexionID);
-           //tiempoInicioWIFI = millis();
-           
-     }else{
-          Serial.println("No se detecto peticion...");
-        }     
-  }
 }
-int analizarPeticion(){
+/**Funcion que utiliza el BT para determinar la accion a realizar**/
+void analizarDato(char c)
+{
+  //Serial.write("leyendo");
+   if(c=='1')
+   {
+      Serial.println("Cuna encendida...");
+      tiempoInicialAmaque = millis();
+      prendoCuna = 1;  
+   }
+   else if(c=='2')
+   {
+      Serial.println("Cuna apagada...");
+      prendoCuna = 0; 
+   }
+}
 
-     int state = 0; 
-     //Formato URL = http://192.168.4.1/led=1
-     if(esp8266.find("servo=")!= -1){
-
-        state = (esp8266.read()-48); // Obtener el estado del pin a mostrar
-      if(state==1){
-          Serial.println("Cuna encendida...");
-          tiempoInicialAmaque = millis();
-          prendoCuna = 1;  
-        }else{
-          Serial.println("Cuna apagada...");
-          prendoCuna = 0; 
-        }
-        
-      } else{
-          prendoCuna = 0; 
-        }
-    return state;
-  }
 /**DECLARACION DE FUNCIONES**/
 void encenderLEDGradual(float luz){
   
@@ -181,7 +165,6 @@ void amacarCuna(){
   
 }
 
-
 void escucharLlanto(){
  valorLlanto = analogRead (pinMicro);
  
@@ -202,135 +185,3 @@ void escucharLlanto(){
         tiempoUltimoLlanto = millis(); 
   }
 }
-
-/*
-Funciones de ESP8266
-**/
-String sendData(String command, const int timeout, boolean debug)
-{
-    String response = "";
-    
-    int dataSize = command.length();
-    char data[dataSize];
-    command.toCharArray(data,dataSize);
-           
-    esp8266.write(data,dataSize); // send the read character to the esp8266
-    if(debug)
-    {
-      Serial.println("\r\n====== HTTP Response From Arduino ======");
-      Serial.write(data,dataSize);
-      Serial.println("\r\n========================================");
-    }
-    
-    long int time = millis();
-    
-    while( (time+timeout) > millis())
-    {
-      while(esp8266.available())
-      {
-        
-        // The esp has data so display its output to the serial window 
-        char c = esp8266.read(); // read the next character.
-        response+=c;
-      }  
-    }
-    
-    if(debug)
-    {
-      Serial.print(response);
-    }
-    
-    return response;
-}
- 
-
-void sendHTTPResponse(int connectionId, String content)
-{
-     // build HTTP response
-     String httpResponse;
-     String httpHeader;
-     // HTTP Header
-     httpHeader = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n"; 
-     httpHeader += "Content-Length: ";
-     httpHeader += content.length();
-     httpHeader += "\r\n";
-     httpHeader +="Connection: close\r\n\r\n";
-     httpResponse = httpHeader + content + " "; // There is a bug in this code: the last character of "content" is not sent, I cheated by adding this extra space
-     //for(int i=0; i<= connectionId; i++){
-     sendCIPData(connectionId,httpResponse);
-      //delay(1500);
-     //}
-}
- 
-
-void sendCIPData(int connectionId, String data)
-{
-   String cipSend = "AT+CIPSEND=";
-   cipSend += connectionId;
-   cipSend += ",";
-   cipSend +=data.length();
-   cipSend +="\r\n";
-   sendCommand(cipSend,2000,DEBUG);
-   sendData(data,2200,DEBUG);
-}
- 
-String sendCommand(String command, const int timeout, boolean debug)
-{
-    String response = "";          
-    esp8266.print(command); // send the read character to the esp8266   
-    long int time = millis();   
-    while( (time+timeout) > millis()){
-      while(esp8266.available()){
-        
-        // The esp has data so display its output to the serial window 
-        char c = esp8266.read(); // read the next character.
-        response+=c;
-      }  
-    }  
-    if(debug){
-      Serial.print(response);
-    }   
-    return response;
-}
-
-
-
-String construirRespuesta(int state){
-  String output;
-  String strState =  String(state);
-  String input = "{\"led\":\""+strState+"\", \"humedad\":\"80%\"}";
-  JsonObject& root = jsonBuffer.parseObject(input);
-        //responder y cerrar la conexión para que el navegador no se quede cargando 
-        // página web a enviar
-        String webpage = "";
-        if (state==1){
-          root[String("led")] = 1;
-          //webpage += "Led = encendido!";
-        }
-        else { webpage += "Led = apagado!";}
-        
-       return input;
-       
-  }
-bool enviarRespuesta(String respuesta){
-      sendHTTPResponse(conexionID,respuesta);
-  }
-  
-bool cerrarConexion(int connectionId){
-  
-       // comando para terminar conexión
-       String comandoCerrar = "AT+CIPCLOSE=";
-       comandoCerrar+=connectionId;
-       comandoCerrar+="\r\n";
-       sendData(comandoCerrar,3000,DEBUG);
-  }
-void resetWIFI(){
-    sendCommand("AT+RST\r\n",2000,DEBUG);      // resetear módulo
-    sendCommand("AT+CWSAP=\"ARDUINO\",\"soa-criard-266\",3,2\r\n",8000,DEBUG); 
-    sendCommand("AT+CWMODE=2\r\n",2000,DEBUG); // configurar como cliente
-    //sendCommand("AT+CWJAP=\"Speedy-AC6CA3\",\"matiasmanda\"\r\n",8000); //SSID y contraseña para unirse a red 
-    sendCommand("AT+CIFSR\r\n",2000,DEBUG);    // obtener dirección IP
-    sendCommand("AT+CIPMUX=1\r\n",2000,DEBUG); // configurar para multiples conexiones
-    sendCommand("AT+CIPSERVER=1,80\r\n",2000,DEBUG);         // servidor en el puerto 80
-  
-  }
