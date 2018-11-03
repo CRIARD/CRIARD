@@ -5,7 +5,7 @@
 #include <Servo.h>
 #define ESPERA_LECTURAS 2000 // tiempo en milisegundos entre lecturas de la intensidad de la luz
 //Variables del Servo
-#define PinServo      9   //Pin donde está conectado el servo 
+#define PinServo      8   //Pin donde está conectado el servo 
 #define ServoCerrado  75   // posición inicial 
 #define ServoAbierto  105  // posición de 0 grados
 int tiempoInicialAmaque = 0;
@@ -28,7 +28,7 @@ int muestras = 0;
 
 //Variables LDR
 #define PinLDR A0 // Pin donde esta conectado el LDR
-#define PinLED 11 // Pin donde esta conectado el LED (PWM)
+#define PinLED 9 // Pin donde esta conectado el LED (PWM)
 long cronometro_lecturas=0;
 long tiempo_transcurrido;
 unsigned int luminosidad;
@@ -39,6 +39,20 @@ float coeficiente_porcentaje=100.0/1023.0; // El valor de la entrada analógica 
 #include <Ethernet.h>
  // arduino Rx (pin 2) ---- ESP8266 Tx
  // arduino Tx (pin 3) ---- ESP8266 Rx
+
+//Variables del led
+const int ledPIN = 12;
+#define PinLED 9 // Pin donde esta conectado el LED (PWM)
+
+
+//Variables de mensajes Bluetooth
+#define encenderCunaBT  '1'
+#define apagarCunaBT    '2'
+#define encenderLEDBT   '3'
+#define apagarLEDBT     '4'
+
+
+
 
 int tiempoInicioWIFI = 0;
 int tiempoWIFI = 0;
@@ -53,7 +67,6 @@ SoftwareSerial BTserial(10,11); // RX | TX
 
 char c = ' ';
 
-int pinLed= 3;
 
 void setup()
 {
@@ -77,7 +90,7 @@ void setup()
     tiempoUltimoLlanto = millis();
     tiempoInicioProm = millis();
     tiempoFinProm = 0; 
-    pinMode(pinLed, OUTPUT);
+    pinMode(PinLED, OUTPUT);
 }
  
 void loop()
@@ -106,25 +119,34 @@ void loop()
 void analizarDato(char c)
 {
   //Serial.write("leyendo");
-   if(c=='1')
+   if(c== encenderCunaBT )
    {
       Serial.println("Cuna encendida...");
       tiempoInicialAmaque = millis();
       prendoCuna = 1;  
    }
-   else if(c=='2')
+   else if(c== apagarCunaBT)
    {
       Serial.println("Cuna apagada...");
       prendoCuna = 0; 
+   }else if(c== encenderLEDBT)
+   {
+    encenderLEDGradual(HIGH);
+   }else if(c== apagarLEDBT)
+   {
+    apagarLED();
    }
 }
 
+
+
 /**DECLARACION DE FUNCIONES**/
 void encenderLEDGradual(float luz){
-  
-    analogWrite(PinLED,luz);   
+    digitalWrite(PinLED,HIGH);   
   }
-
+void apagarLED(){
+    digitalWrite(PinLED,LOW);   
+  }
 float detectarLuz(){
   
     tiempo_transcurrido=millis()-cronometro_lecturas;
