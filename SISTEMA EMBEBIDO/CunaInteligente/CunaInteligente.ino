@@ -1,5 +1,6 @@
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
+#include "melodias.h"
 
 //Fuente https://programarfacil.com/tutoriales/fragmentos/servomotor-con-arduino/
 #include <Servo.h>
@@ -44,12 +45,15 @@ float coeficiente_porcentaje=100.0/1023.0; // El valor de la entrada analógica 
 const int ledPIN = 12;
 #define PinLED 9 // Pin donde esta conectado el LED (PWM)
 
-
+//variables del buzzer
+#define PinBuzzer 4 // Pin donde esta conectado el buzzer
 //Variables de mensajes Bluetooth
 #define encenderCunaBT  '1'
 #define apagarCunaBT    '2'
 #define encenderLEDBT   '3'
 #define apagarLEDBT     '4'
+#define encenderMusicBT '5'
+#define apagarMusicBT   '6'
 
 
 
@@ -91,6 +95,7 @@ void setup()
     tiempoInicioProm = millis();
     tiempoFinProm = 0; 
     pinMode(PinLED, OUTPUT);
+    iniciarMelodia(PinBuzzer);
 }
  
 void loop()
@@ -135,6 +140,12 @@ void analizarDato(char c)
    }else if(c== apagarLEDBT)
    {
     apagarLED();
+   }else if(c== encenderMusicBT)
+   {
+     sonarMelody1();
+   }else if(c== apagarMusicBT)
+   {
+    apagarMelody();
    }
 }
 
