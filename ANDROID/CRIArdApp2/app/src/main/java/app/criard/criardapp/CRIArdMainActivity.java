@@ -148,7 +148,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
 
                     if ((event.values[0] > 15) || (event.values[1] > 15) || (event.values[2] > 15)) {
                         acelerometro.setBackgroundColor(Color.parseColor("#cf091c"));
-                        acelerometro.setText("Sensor detectado: ACELEROMETRO");
+                        //acelerometro.setText("Sensor detectado: ACELEROMETRO");
                         mConnectedThread.write("1");    // Send "1" via Bluetooth
                         showToast("Mecer Cuna");
                     }
@@ -164,11 +164,15 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                     if( event.values[0] == 0 )
                     {
                         proximity.setBackgroundColor(Color.parseColor("#7C2F8E"));
-                        proximity.setText("Proximidad Detectada");
+                        mConnectedThread.write("3");    // Send "1" via Bluetooth
+                        showToast("EncenderLuz");
+                        //proximity.setText("Proximidad Detectada");
                     }
                     else {
                         proximity.setBackgroundColor(Color.parseColor("#FAFAFA"));
-                        proximity.setText(txt);
+                        mConnectedThread.write("4");    // Send "1" via Bluetooth
+                        showToast("ApagarLuz");
+                        //proximity.setText(txt);
                     }
                     break;
 
@@ -180,7 +184,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                         luminosidad.setBackgroundColor(Color.parseColor("#256F3E"));
                     else
                         luminosidad.setBackgroundColor(Color.parseColor("#FAFAFA"));
-                    luminosidad.setText(txt);
+                        //luminosidad.setText(txt);
                     break;
             }
         }
