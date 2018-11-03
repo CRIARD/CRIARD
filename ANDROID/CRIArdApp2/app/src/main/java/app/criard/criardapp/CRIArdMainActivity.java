@@ -40,6 +40,8 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     private Intent intent;
     private Button btn_encender;
     private Button btn_apagar;
+    private Button btn_musicon;
+    private Button btn_musicoff;
     Handler bluetoothIn;
     final int handlerState = 0; //used to identify handler message
 
@@ -102,7 +104,8 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         luminosidad  = (TextView) findViewById(R.id.luminosidad);
         btn_apagar = (Button) findViewById(R.id.btn_apagar);
         btn_encender = (Button) findViewById(R.id.btn_encender);
-
+        btn_musicon = (Button) findViewById(R.id.btn_microon);
+        btn_musicoff = (Button) findViewById(R.id.btn_microoff);
         //obtengo el adaptador del bluethoot
         btAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -113,6 +116,8 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         //defino los handlers para los botones Apagar y encender
         btn_encender.setOnClickListener(btnEncenderListener);
         btn_apagar.setOnClickListener(btnApagarListener);
+        btn_musicon.setOnClickListener(btnEncenderMusica);
+        btn_musicoff.setOnClickListener(btnApagarMusica);
     }
 
     //Listener del boton encender que envia  msj para enceder Led a Arduino atraves del Bluethoot
@@ -130,6 +135,20 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
             mConnectedThread.write("2");    // Send "0" via Bluetooth
             showToast("Frenar Cuna");
         }
+    };
+
+    private View.OnClickListener btnEncenderMusica = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            mConnectedThread.write("5");    // Send "1" via Bluetooth
+            showToast("Sonar Musica");        }
+    };
+
+    private View.OnClickListener btnApagarMusica = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            mConnectedThread.write("6");    // Send "1" via Bluetooth
+            showToast("Apagar Musica");        }
     };
 
     @Override
@@ -177,14 +196,17 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                     break;
 
                 case Sensor.TYPE_LIGHT :
-                    //txt += "Luminosidad\n";
-                    //txt += event.values[0] + " Lux \n";
 
-                    if( event.values[0] < 90)
+                    if( event.values[0] < 200) {
                         luminosidad.setBackgroundColor(Color.parseColor("#256F3E"));
-                    else
+                        mConnectedThread.write("5");    // Send "1" via Bluetooth
+                        showToast("EncenderMicro");
+                    }
+                    else {
                         luminosidad.setBackgroundColor(Color.parseColor("#FAFAFA"));
-                        //luminosidad.setText(txt);
+                        mConnectedThread.write("6");    // Send "1" via Bluetooth
+                        showToast("ApagarMicro");
+                    }
                     break;
             }
         }

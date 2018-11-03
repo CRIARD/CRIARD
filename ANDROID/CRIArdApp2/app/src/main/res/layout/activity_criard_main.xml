@@ -10,9 +10,8 @@
     <TextView
         android:id="@+id/msg"
         android:layout_width="match_parent"
-        android:layout_height="87dp"
+        android:layout_height="47dp"
         android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
         android:textSize="18sp" />
 
     <LinearLayout
@@ -20,7 +19,7 @@
         android:layout_height="34dp"
         android:layout_alignParentBottom="true"
         android:layout_alignParentStart="true"
-        android:layout_marginBottom="135dp"
+        android:layout_marginBottom="191dp"
         android:orientation="horizontal">
 
         <TextView
@@ -61,24 +60,6 @@
         app:layout_constraintRight_toRightOf="parent"
         app:menu="@menu/navigation" />
 
-    <Button
-        android:id="@+id/btn_encender"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/navigation"
-        android:layout_alignParentStart="true"
-        android:layout_marginStart="89dp"
-        android:text="Encender" />
-
-    <Button
-        android:id="@+id/btn_apagar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/navigation"
-        android:layout_alignParentEnd="true"
-        android:layout_marginEnd="89dp"
-        android:text="Apagar" />
-
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
@@ -87,5 +68,87 @@
         android:layout_alignParentTop="true"
         android:layout_marginTop="46dp"
         app:srcCompat="@mipmap/bebe_fondo" />
+
+    <TextView
+        android:id="@+id/txt_temp"
+        android:layout_width="227dp"
+        android:layout_height="53dp"
+        android:layout_below="@+id/imageView"
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/tempbaja" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="140dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/txt_cuna"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="CUNA"
+            android:textAlignment="center"
+            android:textSize="24sp" />
+
+        <TextView
+            android:id="@+id/txt_musica"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="MUSICA"
+            android:textAlignment="center"
+            android:textSize="24sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="435dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_microoff"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/navigation"
+            android:layout_alignParentEnd="true"
+            android:layout_marginLeft="10dp"
+            android:layout_weight="1"
+            android:text="PARAR" />
+
+        <Button
+            android:id="@+id/btn_microon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/navigation"
+            android:layout_alignParentEnd="true"
+            android:layout_weight="1"
+            android:text="SONAR" />
+
+        <Button
+            android:id="@+id/btn_encender"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/navigation"
+            android:layout_alignParentStart="true"
+            android:layout_weight="1"
+            android:text="MOVER" />
+
+        <Button
+            android:id="@+id/btn_apagar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/navigation"
+            android:layout_marginRight="10dp"
+            android:layout_toEndOf="@+id/btn_encender"
+            android:layout_weight="1"
+            android:text="PARAR" />
+    </LinearLayout>
+
+
 
 </RelativeLayout>
