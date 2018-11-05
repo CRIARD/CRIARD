@@ -6,7 +6,6 @@
 #define  a3    4545
 #define  b3    4049
 #define  c4    3816    // 261 Hz
-#define  d4    3401    // 294 Hz
 #define  e4    3030    // 329 Hz
 #define  f4    2865    // 349 Hz
 #define  g4    2551    // 392 Hz
@@ -72,9 +71,9 @@ if (toneM > 0) {
 
 while (elapsed_time < duration) {
 digitalWrite(speakerOut,HIGH);
-delayMicroseconds(toneM / 2);
+//delayMicroseconds(toneM / 2);
 digitalWrite(speakerOut, LOW);
-delayMicroseconds(toneM / 2);
+//delayMicroseconds(toneM / 2);
 elapsed_time += (toneM);
 
        }
@@ -83,7 +82,7 @@ digitalWrite(led,LOW);
 
 }else {
   for (int j = 0; j < rest_count; j++) {
-    delayMicroseconds(duration);
+  //  delayMicroseconds(duration);
   }
 }
 
@@ -96,7 +95,7 @@ void sonarMelody1(){
     beat = beats1[i];
     duration = beat * tempo;
     playTone();
-    delayMicroseconds(pause);
+    //delayMicroseconds(pause);
   }
 }
 
@@ -107,7 +106,7 @@ void sonarMelody2(){
     beat = beats2[i];
     duration = beat * tempo;
     playTone();
-    delayMicroseconds(pause);
+    //delayMicroseconds(pause);
   }
 }
 
