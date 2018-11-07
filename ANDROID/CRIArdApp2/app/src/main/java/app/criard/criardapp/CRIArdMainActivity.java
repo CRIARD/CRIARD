@@ -197,12 +197,12 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
 
                 case Sensor.TYPE_LIGHT :
 
-                    if( event.values[0] < 200) {
+                    if( event.values[0] < 21) { //Celular de Erik, pueden cambiar
                         luminosidad.setBackgroundColor(Color.parseColor("#256F3E"));
                         mConnectedThread.write("5");    // Send "1" via Bluetooth
                         showToast("EncenderMicro");
                     }
-                    else {
+                    if( event.values[0] > 121) { //Celular de Erik, pueden cambiar
                         luminosidad.setBackgroundColor(Color.parseColor("#FAFAFA"));
                         mConnectedThread.write("6");    // Send "1" via Bluetooth
                         showToast("ApagarMicro");

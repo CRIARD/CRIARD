@@ -90,7 +90,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="CUNA"
+            android:text="MUSICA"
             android:textAlignment="center"
             android:textSize="24sp" />
 
@@ -99,7 +99,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="MUSICA"
+            android:text="CUNA"
             android:textAlignment="center"
             android:textSize="24sp" />
     </LinearLayout>
@@ -111,6 +111,15 @@
         android:orientation="horizontal">
 
         <Button
+            android:id="@+id/btn_microon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/navigation"
+            android:layout_alignParentEnd="true"
+            android:layout_weight="1"
+            android:text="SONAR" />
+
+        <Button
             android:id="@+id/btn_microoff"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -119,15 +128,6 @@
             android:layout_marginLeft="10dp"
             android:layout_weight="1"
             android:text="PARAR" />
-
-        <Button
-            android:id="@+id/btn_microon"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_above="@+id/navigation"
-            android:layout_alignParentEnd="true"
-            android:layout_weight="1"
-            android:text="SONAR" />
 
         <Button
             android:id="@+id/btn_encender"
