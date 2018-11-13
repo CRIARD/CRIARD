@@ -55,8 +55,16 @@ const int ledPIN = 12;
 #define encenderMusicBT '5'
 #define apagarMusicBT   '6'
 
-
-
+//Variables de estado de cada sensor//
+String ESTADOLED = "";
+String ESTADOSERVO = "";
+String ESTADOMICRO = "";
+char SERVOENCENDIDO[3] =  "SE";
+char SERVOAPAGADO[3] = "SA";
+char LUZENCENDIDA[3] = "LE";
+char LUZAPAGADA[3] = "LA";
+char MICROENCENDIDO[3] = "ME";
+char MICROAPAGADO[3] = "MA";
 
 int tiempoInicioWIFI = 0;
 int tiempoWIFI = 0;
@@ -103,65 +111,95 @@ void loop()
    //sI reciben datos del HC05 
     if (BTserial.available())
     { 
+        informarEstadoSensor();
         //se los lee y se los muestra en el monitor serie
         c = BTserial.read();
-        //Serial.write("leyendoAA:");
-        Serial.write(c);
-        analizarDato(c);
+        Serial.write(c);      
+        analizarDato(c);     
     }
     amacarCuna();
-    //Si se ingresa datos por teclado en el monitor serie 
-    if (Serial.available())
-    {
-        //se los lee y se los envia al HC05
-        c =  Serial.read();
-        Serial.write(c);
-        BTserial.write(c); 
-    }
-    
+  
 }
 /**Funcion que utiliza el BT para determinar la accion a realizar**/
+
+//ENVIAR ESTADOS A LA APLICACION
+void informarEstadoSensor(){
+    if(ESTADOSERVO == "ON"){
+      //SERVOENCENDIDO[0]= 'S';
+      enviarEstadoActualAANDROID(SERVOENCENDIDO); 
+    }else{
+      //SERVOENCENDIDO[0]= 'S';
+      enviarEstadoActualAANDROID(SERVOAPAGADO); 
+      }
+      /*
+    if(ESTADOMICRO == "ON"){
+      //MICROENCENDIDO[0] = 'M';
+      enviarEstadoActualAANDROID(MICROENCENDIDO); 
+    }else{
+      //MICROENCENDIDO[0] = 'M';
+      enviarEstadoActualAANDROID(MICROAPAGADO); 
+      }
+    if(ESTADOLED == "ON"){
+      //LUZENCENDIDA[0] = 'L';
+      enviarEstadoActualAANDROID(LUZENCENDIDA); 
+    }else{
+      //LUZENCENDIDA[0] = 'L';
+      enviarEstadoActualAANDROID(LUZAPAGADA); 
+      }
+      */
+    BTserial.write("\n");
+  }
+
+
+void enviarEstadoActualAANDROID(char* cadAux){
+    while (*cadAux != '\0'){
+        BTserial.write(*cadAux);        
+        cadAux++;
+    }
+    //BTserial.write("|");
+}
+
 void analizarDato(char c)
 {
-  //Serial.write("leyendo");
-   if(c== encenderCunaBT )
-   {
-      Serial.println("Cuna encendida...");
-      tiempoInicialAmaque = millis();
-      prendoCuna = 1;  
-   }
-   else if(c== apagarCunaBT)
-   {
-      Serial.println("Cuna apagada...");
-      prendoCuna = 0; 
-   }else if(c== encenderLEDBT)
-   {
-    encenderLEDGradual(HIGH);
-   }else if(c== apagarLEDBT)
-   {
-    apagarLED();
-   }else if(c== encenderMusicBT)
-   {
-     sonarMelody1();
-   }else if(c== apagarMusicBT)
-   {
-    apagarMelody();
-   }
+  switch(c){
+      case encenderCunaBT:
+        tiempoInicialAmaque = millis();
+        ESTADOSERVO = "ON"; 
+        break;        
+      case apagarCunaBT:
+        ESTADOSERVO = "OFF";
+        break;
+      case encenderLEDBT:
+        accionLed(HIGH);
+        break;
+      case apagarLEDBT:
+        accionLed(LOW);
+        break;
+      case encenderMusicBT:
+        sonarMelody1();
+        break;
+      case apagarMusicBT:
+        apagarMelody();
+        break;
+    }
 }
 
 
 
 /**DECLARACION DE FUNCIONES**/
-void encenderLEDGradual(float luz){
-    digitalWrite(PinLED,HIGH);   
+void accionLed(float luz){
+  if(luz == LOW){
+    ESTADOLED = "OFF";
+  }else{
+    ESTADOLED = "ON"; 
   }
-void apagarLED(){
-    digitalWrite(PinLED,LOW);   
+    digitalWrite(PinLED,luz);   
   }
+  
+  
 float detectarLuz(){
   
-    tiempo_transcurrido=millis()-cronometro_lecturas;
-    
+    tiempo_transcurrido=millis()-cronometro_lecturas;    
     if(tiempo_transcurrido>ESPERA_LECTURAS){// espera no bloqueante
       
         cronometro_lecturas=millis();
@@ -170,15 +208,13 @@ float detectarLuz(){
         Serial.print(luminosidad*coeficiente_porcentaje);//detectamos el porcentaje de luminosidad
         Serial.println("%");
     }
-
-    return luminosidad*coeficiente_porcentaje;
-  
+    return luminosidad*coeficiente_porcentaje;  
   }
 
 void amacarCuna(){
-  if(prendoCuna == 1){
-  tiempoAmaque = millis()-tiempoInicialAmaque;
-    if(tiempoAmaque>20){
+  if(ESTADOSERVO == "ON"){
+    tiempoAmaque = millis()-tiempoInicialAmaque;
+    if(tiempoAmaque > 20){
     if(amacar==0){
       posicionServo ++;
       servoMotor.write(posicionServo); 
@@ -194,27 +230,24 @@ void amacarCuna(){
     }
     tiempoInicialAmaque=millis();
     }
-  }
-  
+  }  
 }
 
 void escucharLlanto(){
- valorLlanto = analogRead (pinMicro);
- 
-    Serial.println(valorLlanto ,DEC);
-  if(valorLlanto>umbralRuido)
-  {
+  valorLlanto = analogRead (pinMicro);
+  Serial.println(valorLlanto ,DEC);
+  if(valorLlanto>umbralRuido){
     Serial.print("Está haciendo ruido");
     Serial.println(valorLlanto ,DEC);
-    prendoCuna = 1;
+    ESTADOSERVO = "ON"; 
     tiempoUltimoLlanto = millis();
   }else{
     tiempoSilencio = millis();
   }
   //si despues de cierto tiempo no llora apago la mecedora
   if((tiempoSilencio - tiempoUltimoLlanto)> standby ){
-        prendoCuna = 0;
-        tiempoSilencio = millis();
-        tiempoUltimoLlanto = millis(); 
+    ESTADOSERVO = "OFF"; 
+    tiempoSilencio = millis();
+    tiempoUltimoLlanto = millis(); 
   }
 }

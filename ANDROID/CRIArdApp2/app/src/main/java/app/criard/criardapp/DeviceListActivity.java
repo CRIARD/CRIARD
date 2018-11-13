@@ -12,6 +12,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 
+import android.view.View;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -19,6 +21,7 @@ import android.widget.Toast;
 public class DeviceListActivity extends Activity{
 
     private ListView mListView;
+    private Button btn_volver;
     private DeviceListAdapter mAdapter;
     private ArrayList<BluetoothDevice> mDeviceList;
     private int posicionListBluethoot;
@@ -32,7 +35,7 @@ public class DeviceListActivity extends Activity{
 
         //defino los componentes de layout
         mListView = (ListView) findViewById(R.id.lv_paired);
-
+        btn_volver = (Button) findViewById(R.id.btn_volver);
         //obtengo por medio de un Bundle del intent la lista de dispositivos encontrados
         mDeviceList = getIntent().getExtras().getParcelableArrayList("device.list");
 
@@ -43,6 +46,7 @@ public class DeviceListActivity extends Activity{
         mAdapter.setData(mDeviceList);
 
         //defino un listener en el boton emparejar del listview
+        btn_volver.setOnClickListener(onClickListenerVolver);
         mAdapter.setListener(listenerBotonEmparejar);
         mAdapter.setListenerIniciar(iniciarButtonClickListener);
         mListView.setAdapter(mAdapter);
@@ -88,6 +92,14 @@ public class DeviceListActivity extends Activity{
         }
     }
 
+    private View.OnClickListener onClickListenerVolver = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent intent =  new Intent(DeviceListActivity.this,ActivityInicial.class);
+            startActivity(intent);
+            finish();
+        }
+    };
     //Metodo que actua como Listener de los eventos que ocurren en los componentes graficos de la activty
     private DeviceListAdapter.OnPairButtonClickListener listenerBotonEmparejar = new DeviceListAdapter.OnPairButtonClickListener() {
         @Override
@@ -117,7 +129,7 @@ public class DeviceListActivity extends Activity{
 
         @Override
         public void IniciarButtonClick(int position) {
-            BluetoothDevice dispositivo = (BluetoothDevice) mAdapter.getItem(posicionListBluethoot);
+            BluetoothDevice dispositivo = (BluetoothDevice) mAdapter.getItem(position);
 
             //se inicia el Activity de comunicacion con el bluethoot, para transferir los datos.
             //Para eso se le envia como parametro la direccion(MAC) del bluethoot Arduino

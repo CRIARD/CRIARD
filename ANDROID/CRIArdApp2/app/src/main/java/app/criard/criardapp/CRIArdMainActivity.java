@@ -37,6 +37,9 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     private TextView acelerometro;
     private TextView proximity;
     private TextView luminosidad;
+    private TextView txt_servo;
+    private TextView txt_led;
+    private TextView txt_micro;
     private Intent intent;
     private Button btn_encender;
     private Button btn_apagar;
@@ -106,6 +109,9 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         btn_encender = (Button) findViewById(R.id.btn_encender);
         btn_musicon = (Button) findViewById(R.id.btn_microon);
         btn_musicoff = (Button) findViewById(R.id.btn_microoff);
+        txt_led = (TextView) findViewById(R.id.txt_led);
+        txt_micro = (TextView) findViewById(R.id.txt_micro);
+        txt_servo = (TextView) findViewById(R.id.txt_servo);
         //obtengo el adaptador del bluethoot
         btAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -334,22 +340,46 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                 if (msg.what == handlerState)
                 {
                     //voy concatenando el msj
+                    String dataInPrint;
                     String readMessage = (String) msg.obj;
                     recDataString.append(readMessage);
-                    int endOfLineIndex = recDataString.indexOf("\r\n");
+
+                    int endOfLineIndex = recDataString.indexOf("\n");
 
                     //cuando recibo toda una linea la muestro en el layout
                     if (endOfLineIndex > 0)
                     {
-                        String dataInPrint = recDataString.substring(0, endOfLineIndex);
-                        //txtPotenciometro.setText(dataInPrint);
+                        String sensor = recDataString.substring(0,1);
 
-                        recDataString.delete(0, recDataString.length());
+                        if(sensor == "S") {
+                            dataInPrint = recDataString.substring(1, endOfLineIndex);
+                            if (dataInPrint == "E") {
+                                txt_servo.setText("Meciendo");
+                            } else {
+                                txt_servo.setText("En Reposo");
+                            }
+                        }
+                        if(sensor == "L") {
+                            dataInPrint = recDataString.substring(1, endOfLineIndex);
+                            if (dataInPrint == "E") {
+                                txt_led.setText("Encendido");
+                            } else {
+                                txt_led.setText("Apagado");
+                            }
+                        }
+                        if(sensor == "M") {
+                            dataInPrint = recDataString.substring(1, endOfLineIndex);
+                            if (dataInPrint == "E") {
+                                txt_micro.setText("LLorando");
+                            } else {
+                                txt_micro.setText("Durmiendo");
+                            }
+                        }
                     }
+                    recDataString.delete(0, recDataString.length());
                 }
             }
         };
-
     }
 
 

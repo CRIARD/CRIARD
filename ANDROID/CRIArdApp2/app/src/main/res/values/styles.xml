@@ -8,9 +8,9 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
     <style name="tempBaja" parent="AlertDialog.AppCompat">
-        <item name="android:drawable">@drawable/tempbaja</item>
+        <item name="android:drawable">@drawable/encendido</item>
     </style>
     <style name="tempAlta" parent="AlertDialog.AppCompat">
-        <item name="android:drawable">@drawable/tempalta</item>
+        <item name="android:drawable">@drawable/apagado</item>
     </style>
 </resources>
