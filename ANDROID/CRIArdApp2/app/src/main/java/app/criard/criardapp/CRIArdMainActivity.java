@@ -1,12 +1,15 @@
 package app.criard.criardapp;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.support.v7.app.AppCompatActivity;
 import android.support.design.widget.BottomNavigationView;
 import android.support.annotation.NonNull;
@@ -14,6 +17,7 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import java.sql.Time;
 import java.text.DecimalFormat;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -46,6 +50,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     private Button btn_musicon;
     private Button btn_musicoff;
     Handler bluetoothIn;
+    MyCountDownTimer myCountDownTimer;
     final int handlerState = 0; //used to identify handler message
 
     private BluetoothAdapter btAdapter = null;
@@ -114,7 +119,6 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         txt_servo = (TextView) findViewById(R.id.txt_servo);
         //obtengo el adaptador del bluethoot
         btAdapter = BluetoothAdapter.getDefaultAdapter();
-
         //defino el Handler de comunicacion entre el hilo Principal  el secundario.
         //El hilo secundario va a mostrar informacion al layout atraves utilizando indeirectamente a este handler
         bluetoothIn = Handler_Msg_Hilo_Principal();
@@ -176,6 +180,12 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                         //acelerometro.setText("Sensor detectado: ACELEROMETRO");
                         mConnectedThread.write("1");    // Send "1" via Bluetooth
                         showToast("Mecer Cuna");
+                        //myCountDownTimer = new MyCountDownTimer(5000, 1000);
+                        //myCountDownTimer.cancel();
+
+                    }else {
+
+                        //myCountDownTimer.start();
                     }
                     break;
 
@@ -349,30 +359,40 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                     //cuando recibo toda una linea la muestro en el layout
                     if (endOfLineIndex > 0)
                     {
-                        String sensor = recDataString.substring(0,1);
-
-                        if(sensor == "S") {
-                            dataInPrint = recDataString.substring(1, endOfLineIndex);
-                            if (dataInPrint == "E") {
+                        String servo = recDataString.substring(0,1);
+                        String estServo = recDataString.substring(1,2);
+                        String micro = recDataString.substring(2,3);
+                        String estMicro = recDataString.substring(3,4);
+                        String led =  recDataString.substring(4,5);
+                        String estLed = recDataString.substring(5,6);
+                        if(servo.equals("S")){
+                            if (estServo.equals("E")) {
                                 txt_servo.setText("Meciendo");
-                            } else {
+                                txt_servo.setBackgroundResource(R.drawable.encendido);
+                            }
+                            else {
                                 txt_servo.setText("En Reposo");
+                                txt_servo.setBackgroundResource(R.drawable.apagado);
                             }
                         }
-                        if(sensor == "L") {
-                            dataInPrint = recDataString.substring(1, endOfLineIndex);
-                            if (dataInPrint == "E") {
+                        if(led.equals("L")) {
+                            if (estLed.equals("E")) {
                                 txt_led.setText("Encendido");
-                            } else {
+                                txt_led.setBackgroundResource(R.drawable.encendido);
+                            }
+                            else {
                                 txt_led.setText("Apagado");
+                                txt_led.setBackgroundResource(R.drawable.apagado);
                             }
                         }
-                        if(sensor == "M") {
-                            dataInPrint = recDataString.substring(1, endOfLineIndex);
-                            if (dataInPrint == "E") {
+                        if(micro.equals("M")) {
+                            if (estMicro.equals("E")) {
                                 txt_micro.setText("LLorando");
-                            } else {
+                                txt_micro.setBackgroundResource(R.drawable.encendido);
+                            }
+                            else {
                                 txt_micro.setText("Durmiendo");
+                                txt_micro.setBackgroundResource(R.drawable.apagado);
                             }
                         }
                     }
@@ -448,5 +468,22 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
 
     private void showToast(String message) {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
+    }
+
+    public class MyCountDownTimer extends CountDownTimer {
+
+        public MyCountDownTimer(long millisInFuture, long countDownInterval) {
+            super(millisInFuture, countDownInterval);
+        }
+
+        @Override
+        public void onTick(long millisUntilFinished) {
+
+        }
+
+        @Override
+        public void onFinish() {
+            acelerometro.setBackgroundColor(Color.TRANSPARENT);
+        }
     }
 }

@@ -59,12 +59,12 @@ const int ledPIN = 12;
 String ESTADOLED = "";
 String ESTADOSERVO = "";
 String ESTADOMICRO = "";
-char SERVOENCENDIDO[3] =  "SE";
-char SERVOAPAGADO[3] = "SA";
-char LUZENCENDIDA[3] = "LE";
-char LUZAPAGADA[3] = "LA";
-char MICROENCENDIDO[3] = "ME";
-char MICROAPAGADO[3] = "MA";
+String SERVOENCENDIDO  = "SE";
+String SERVOAPAGADO    = "SA";
+String LUZENCENDIDA    = "LE";
+String LUZAPAGADA      = "LA";
+String MICROENCENDIDO  = "ME";
+String MICROAPAGADO    = "MA";
 
 int tiempoInicioWIFI = 0;
 int tiempoWIFI = 0;
@@ -78,7 +78,7 @@ bool estadoConexion = false;
 SoftwareSerial BTserial(10,11); // RX | TX
 
 char c = ' ';
-
+int flag = 1;
 
 void setup()
 {
@@ -108,55 +108,44 @@ void setup()
  
 void loop()
 {
+    
    //sI reciben datos del HC05 
     if (BTserial.available())
-    { 
-        informarEstadoSensor();
-        //se los lee y se los muestra en el monitor serie
-        c = BTserial.read();
-        Serial.write(c);      
-        analizarDato(c);     
-    }
-    amacarCuna();
-  
+    {                
+      //se los lee y se los muestra en el monitor serie
+      c = BTserial.read();    
+      analizarDato(c);   
+      informarEstadoSensor();            
+    }   
+    amacarCuna(); 
 }
 /**Funcion que utiliza el BT para determinar la accion a realizar**/
 
 //ENVIAR ESTADOS A LA APLICACION
 void informarEstadoSensor(){
+    BTserial.write("0");//Dato que envio de entrada para que no me borre el primer caracter del mensaje
     if(ESTADOSERVO == "ON"){
-      //SERVOENCENDIDO[0]= 'S';
       enviarEstadoActualAANDROID(SERVOENCENDIDO); 
     }else{
-      //SERVOENCENDIDO[0]= 'S';
       enviarEstadoActualAANDROID(SERVOAPAGADO); 
       }
-      /*
     if(ESTADOMICRO == "ON"){
-      //MICROENCENDIDO[0] = 'M';
       enviarEstadoActualAANDROID(MICROENCENDIDO); 
     }else{
-      //MICROENCENDIDO[0] = 'M';
       enviarEstadoActualAANDROID(MICROAPAGADO); 
       }
     if(ESTADOLED == "ON"){
-      //LUZENCENDIDA[0] = 'L';
       enviarEstadoActualAANDROID(LUZENCENDIDA); 
     }else{
-      //LUZENCENDIDA[0] = 'L';
       enviarEstadoActualAANDROID(LUZAPAGADA); 
       }
-      */
-    BTserial.write("\n");
+    BTserial.write('\n');
+    BTserial.flush();
   }
 
 
-void enviarEstadoActualAANDROID(char* cadAux){
-    while (*cadAux != '\0'){
-        BTserial.write(*cadAux);        
-        cadAux++;
-    }
-    //BTserial.write("|");
+void enviarEstadoActualAANDROID(String msj){
+    BTserial.print(msj);     
 }
 
 void analizarDato(char c)
@@ -165,21 +154,27 @@ void analizarDato(char c)
       case encenderCunaBT:
         tiempoInicialAmaque = millis();
         ESTADOSERVO = "ON"; 
+        //enviarEstadoActualAANDROID(SERVOENCENDIDO);
         break;        
       case apagarCunaBT:
         ESTADOSERVO = "OFF";
+        //enviarEstadoActualAANDROID(SERVOAPAGADO); 
         break;
       case encenderLEDBT:
         accionLed(HIGH);
+        //enviarEstadoActualAANDROID(LUZENCENDIDA); 
         break;
       case apagarLEDBT:
         accionLed(LOW);
+        //enviarEstadoActualAANDROID(LUZAPAGADA); 
         break;
       case encenderMusicBT:
         sonarMelody1();
+        //enviarEstadoActualAANDROID(MICROENCENDIDO); 
         break;
       case apagarMusicBT:
         apagarMelody();
+        //enviarEstadoActualAANDROID(MICROAPAGADO); 
         break;
     }
 }
