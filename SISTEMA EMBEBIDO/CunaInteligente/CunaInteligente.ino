@@ -1,24 +1,25 @@
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
-#include "melodias.h"
+//#include "melodias.h"
 
 //Fuente https://programarfacil.com/tutoriales/fragmentos/servomotor-con-arduino/
 #include <Servo.h>
 #define ESPERA_LECTURAS 2000 // tiempo en milisegundos entre lecturas de la intensidad de la luz
 //Variables del Servo
 #define PinServo      8   //Pin donde está conectado el servo 
-#define ServoCerrado  75   // posición inicial 
-#define ServoAbierto  105  // posición de 0 grados
+#define ServoCerrado  0   // posición inicial 
+#define ServoQUIETO  0   // posición inicial 
+#define ServoAbierto 90  // posición de 0 grados
 int tiempoInicialAmaque = 0;
 int tiempoAmaque = 0;
 int prendoCuna = 0;
 int amacar = 0;   //flag para amacar izquierda o derecha
-int posicionServo = ServoCerrado; //Va a contener la ubicación del servo
+int posicionServo = ServoQUIETO; //Va a contener la ubicación del servo
 Servo servoMotor;
 
 //Variables del micrófono
 #define pinMicro      A5   //Pin donde está conectado el servo 
-#define umbralRuido   72  //Valor que lee el microfono en silencio
+#define umbralRuido   200  //Valor que lee el microfono en silencio
 #define standby 20000
 int valorLlanto = 0;      //variable to store the value coming from the sensor
 int tiempoUltimoLlanto = 0;
@@ -28,8 +29,8 @@ int tiempoFinProm = 0;
 int muestras = 0;
 
 //Variables LDR
-#define PinLDR A0 // Pin donde esta conectado el LDR
-#define PinLED 9 // Pin donde esta conectado el LED (PWM)
+#define PinLDR A1 // Pin donde esta conectado el LDR
+#define PinLED 6 // Pin donde esta conectado el LED (PWM)
 long cronometro_lecturas=0;
 long tiempo_transcurrido;
 unsigned int luminosidad;
@@ -43,7 +44,6 @@ float coeficiente_porcentaje=100.0/1023.0; // El valor de la entrada analógica 
 
 //Variables del led
 const int ledPIN = 12;
-#define PinLED 9 // Pin donde esta conectado el LED (PWM)
 
 //variables del buzzer
 #define PinBuzzer 4 // Pin donde esta conectado el buzzer
@@ -102,8 +102,6 @@ void setup()
     tiempoUltimoLlanto = millis();
     tiempoInicioProm = millis();
     tiempoFinProm = 0; 
-    pinMode(PinLED, OUTPUT);
-    iniciarMelodia(PinBuzzer);
 }
  
 void loop()
@@ -117,7 +115,9 @@ void loop()
       analizarDato(c);   
       informarEstadoSensor();            
     }   
+    //escucharLlanto();
     amacarCuna(); 
+    detectarLuz();
 }
 /**Funcion que utiliza el BT para determinar la accion a realizar**/
 
@@ -169,11 +169,11 @@ void analizarDato(char c)
         //enviarEstadoActualAANDROID(LUZAPAGADA); 
         break;
       case encenderMusicBT:
-        sonarMelody1();
+        //sonarMelody1();
         //enviarEstadoActualAANDROID(MICROENCENDIDO); 
         break;
       case apagarMusicBT:
-        apagarMelody();
+        //apagarMelody();
         //enviarEstadoActualAANDROID(MICROAPAGADO); 
         break;
     }
@@ -183,27 +183,37 @@ void analizarDato(char c)
 
 /**DECLARACION DE FUNCIONES**/
 void accionLed(float luz){
-  if(luz == LOW){
-    ESTADOLED = "OFF";
-  }else{
-    ESTADOLED = "ON"; 
+    if(luz == LOW){
+      ESTADOLED = "OFF";
+    }else{
+      ESTADOLED = "ON"; 
+    }
+    analogWrite(PinLED,luz);   
   }
-    digitalWrite(PinLED,luz);   
-  }
   
   
-float detectarLuz(){
-  
+void detectarLuz(){
     tiempo_transcurrido=millis()-cronometro_lecturas;    
     if(tiempo_transcurrido>ESPERA_LECTURAS){// espera no bloqueante
       
         cronometro_lecturas=millis();
         luminosidad=analogRead(PinLDR);
         Serial.print("La luminosidad es del ");
-        Serial.print(luminosidad*coeficiente_porcentaje);//detectamos el porcentaje de luminosidad
-        Serial.println("%");
+        Serial.print(255-(((luminosidad*coeficiente_porcentaje)*255)/100));//detectamos el porcentaje de luminosidad
+        Serial.println("%"); 
     }
-    return luminosidad*coeficiente_porcentaje;  
+    if((255-(((luminosidad*coeficiente_porcentaje)*255)/100)) >  200.00){
+      analogWrite(PinLED,HIGH);
+      ESTADOLED = "OFF";
+    }
+
+    if((255-(((luminosidad*coeficiente_porcentaje)*255)/100)) <  30.00){
+      ESTADOLED = "ON";
+    }
+    if(ESTADOLED == "ON"){
+        analogWrite(PinLED,(255-(((luminosidad*coeficiente_porcentaje)*255)/100)));  
+    }
+    //Serial.println(luminosidad);
   }
 
 void amacarCuna(){
@@ -225,23 +235,27 @@ void amacarCuna(){
     }
     tiempoInicialAmaque=millis();
     }
-  }  
+  }else{
+      servoMotor.write(ServoQUIETO); 
+    }  
 }
 
 void escucharLlanto(){
   valorLlanto = analogRead (pinMicro);
-  Serial.println(valorLlanto ,DEC);
+  //Serial.println(valorLlanto ,DEC);
   if(valorLlanto>umbralRuido){
-    Serial.print("Está haciendo ruido");
-    Serial.println(valorLlanto ,DEC);
-    ESTADOSERVO = "ON"; 
+    //Serial.print("Está haciendo ruido");
+    //Serial.println(valorLlanto ,DEC);
+    //ESTADOSERVO = "ON";
+       //sI reciben datos del HC05 
     tiempoUltimoLlanto = millis();
   }else{
     tiempoSilencio = millis();
   }
   //si despues de cierto tiempo no llora apago la mecedora
   if((tiempoSilencio - tiempoUltimoLlanto)> standby ){
-    ESTADOSERVO = "OFF"; 
+    //ESTADOSERVO = "OFF";
+        //sI reciben datos del HC05 
     tiempoSilencio = millis();
     tiempoUltimoLlanto = millis(); 
   }

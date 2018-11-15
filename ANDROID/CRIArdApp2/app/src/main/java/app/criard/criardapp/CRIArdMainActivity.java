@@ -50,7 +50,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     private Button btn_musicon;
     private Button btn_musicoff;
     Handler bluetoothIn;
-    MyCountDownTimer myCountDownTimer;
+    private boolean flagAcelerometro;
     final int handlerState = 0; //used to identify handler message
 
     private BluetoothAdapter btAdapter = null;
@@ -175,17 +175,19 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
 
                 case Sensor.TYPE_ACCELEROMETER:
 
-                    if ((event.values[0] > 15) || (event.values[1] > 15) || (event.values[2] > 15)) {
-                        acelerometro.setBackgroundColor(Color.parseColor("#cf091c"));
-                        //acelerometro.setText("Sensor detectado: ACELEROMETRO");
-                        mConnectedThread.write("1");    // Send "1" via Bluetooth
-                        showToast("Mecer Cuna");
-                        //myCountDownTimer = new MyCountDownTimer(5000, 1000);
-                        //myCountDownTimer.cancel();
+                    if ((event.values[0] > 20) || (event.values[1] > 20) || (event.values[2] > 20)) {
 
-                    }else {
-
-                        //myCountDownTimer.start();
+                        if(!flagAcelerometro){
+                            acelerometro.setBackgroundColor(Color.parseColor("#cf091c"));
+                            mConnectedThread.write("1");    // Send "1" via Bluetooth
+                            showToast("Mecer Cuna");
+                            flagAcelerometro = true;
+                        }else {
+                            acelerometro.setBackgroundColor(Color.TRANSPARENT);
+                            mConnectedThread.write("2");    // Send "1" via Bluetooth
+                            showToast("Cuna en reposo");
+                            flagAcelerometro = false;
+                        }
                     }
                     break;
 
@@ -369,10 +371,12 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                             if (estServo.equals("E")) {
                                 txt_servo.setText("Meciendo");
                                 txt_servo.setBackgroundResource(R.drawable.encendido);
+                                flagAcelerometro = true;
                             }
                             else {
                                 txt_servo.setText("En Reposo");
                                 txt_servo.setBackgroundResource(R.drawable.apagado);
+                                flagAcelerometro = false;
                             }
                         }
                         if(led.equals("L")) {
@@ -470,20 +474,5 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 
-    public class MyCountDownTimer extends CountDownTimer {
 
-        public MyCountDownTimer(long millisInFuture, long countDownInterval) {
-            super(millisInFuture, countDownInterval);
-        }
-
-        @Override
-        public void onTick(long millisUntilFinished) {
-
-        }
-
-        @Override
-        public void onFinish() {
-            acelerometro.setBackgroundColor(Color.TRANSPARENT);
-        }
-    }
 }
