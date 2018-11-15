@@ -19,7 +19,7 @@ Servo servoMotor;
 
 //Variables del micrófono
 #define pinMicro      A5   //Pin donde está conectado el servo 
-#define umbralRuido   200  //Valor que lee el microfono en silencio
+#define umbralRuido   20  //Valor que lee el microfono en silencio
 #define standby 20000
 int valorLlanto = 0;      //variable to store the value coming from the sensor
 int tiempoUltimoLlanto = 0;
@@ -27,6 +27,8 @@ int tiempoSilencio = 0;
 int tiempoInicioProm = 0; // para calcular el ruido ambiente
 int tiempoFinProm = 0;
 int muestras = 0;
+float sumaRuido = 0;
+float ruidoPromedio = 0;  
 
 //Variables LDR
 #define PinLDR A1 // Pin donde esta conectado el LDR
@@ -115,7 +117,7 @@ void loop()
       analizarDato(c);   
       informarEstadoSensor();            
     }   
-    //escucharLlanto();
+    escucharLlanto();
     amacarCuna(); 
     detectarLuz();
 }
@@ -202,17 +204,12 @@ void detectarLuz(){
         Serial.print(255-(((luminosidad*coeficiente_porcentaje)*255)/100));//detectamos el porcentaje de luminosidad
         Serial.println("%"); 
     }
-    if((255-(((luminosidad*coeficiente_porcentaje)*255)/100)) >  200.00){
-      analogWrite(PinLED,HIGH);
+    if((255-(((luminosidad*coeficiente_porcentaje)*255)/100)) == LOW){
       ESTADOLED = "OFF";
+    }else{
+      ESTADOLED = "ON"; 
     }
-
-    if((255-(((luminosidad*coeficiente_porcentaje)*255)/100)) <  30.00){
-      ESTADOLED = "ON";
-    }
-    if(ESTADOLED == "ON"){
-        analogWrite(PinLED,(255-(((luminosidad*coeficiente_porcentaje)*255)/100)));  
-    }
+    analogWrite(PinLED,(255-(((luminosidad*coeficiente_porcentaje)*255)/100)));  
     //Serial.println(luminosidad);
   }
 
@@ -242,8 +239,11 @@ void amacarCuna(){
 
 void escucharLlanto(){
   valorLlanto = analogRead (pinMicro);
+  muestras = muestras +1 ;
+  sumaRuido = sumaRuido + valorLlanto;
+  ruidoPromedio = sumaRuido/muestras;  
   //Serial.println(valorLlanto ,DEC);
-  if(valorLlanto>umbralRuido){
+  if(valorLlanto>(ruidoPromedio + umbralRuido) ){
     //Serial.print("Está haciendo ruido");
     //Serial.println(valorLlanto ,DEC);
     //ESTADOSERVO = "ON";
