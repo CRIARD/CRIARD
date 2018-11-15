@@ -19,16 +19,17 @@ Servo servoMotor;
 
 //Variables del micrófono
 #define pinMicro      A5   //Pin donde está conectado el servo 
-#define umbralRuido   20  //Valor que lee el microfono en silencio
+//#define umbralRuido   20  //Valor que lee el microfono en silencio
 #define standby 20000
-int valorLlanto = 0;      //variable to store the value coming from the sensor
+double valorLlanto = 0;      //variable to store the value coming from the sensor
 int tiempoUltimoLlanto = 0;
 int tiempoSilencio = 0;
 int tiempoInicioProm = 0; // para calcular el ruido ambiente
 int tiempoFinProm = 0;
-int muestras = 0;
-float sumaRuido = 0;
-float ruidoPromedio = 0;  
+double muestras = 0;
+double sumaRuido = 0;
+double ruidoPromedio = 0;  
+double umbralRuidol= 80;
 
 //Variables LDR
 #define PinLDR A1 // Pin donde esta conectado el LDR
@@ -200,9 +201,9 @@ void detectarLuz(){
       
         cronometro_lecturas=millis();
         luminosidad=analogRead(PinLDR);
-        Serial.print("La luminosidad es del ");
-        Serial.print(255-(((luminosidad*coeficiente_porcentaje)*255)/100));//detectamos el porcentaje de luminosidad
-        Serial.println("%"); 
+        //Serial.print("La luminosidad es del ");
+        //Serial.print(255-(((luminosidad*coeficiente_porcentaje)*255)/100));//detectamos el porcentaje de luminosidad
+        //Serial.println("%"); 
     }
     if((255-(((luminosidad*coeficiente_porcentaje)*255)/100)) == LOW){
       ESTADOLED = "OFF";
@@ -238,24 +239,40 @@ void amacarCuna(){
 }
 
 void escucharLlanto(){
-  valorLlanto = analogRead (pinMicro);
-  muestras = muestras +1 ;
+  valorLlanto = (double)analogRead (pinMicro);
+
+  
+  if(muestras == 2000){
+    ruidoPromedio = sumaRuido/muestras;  
+    umbralRuidol = ruidoPromedio+ruidoPromedio/2;
+    /*
+    Serial.print("ruidoPromedio");
+    Serial.println(ruidoPromedio);
+    Serial.print("ruidoPromedio");
+    Serial.println(ruidoPromedio);
+    Serial.print("muestra");
+    Serial.println(muestras);
+    */
+    muestras = 0;
+    sumaRuido = 0;
+   Serial.println(muestras);
+  }else{
+      muestras = muestras +1 ;
   sumaRuido = sumaRuido + valorLlanto;
-  ruidoPromedio = sumaRuido/muestras;  
-  //Serial.println(valorLlanto ,DEC);
-  if(valorLlanto>(ruidoPromedio + umbralRuido) ){
-    //Serial.print("Está haciendo ruido");
-    //Serial.println(valorLlanto ,DEC);
-    //ESTADOSERVO = "ON";
-       //sI reciben datos del HC05 
+  }
+  
+  if(umbralRuidol!=0 && (valorLlanto>umbralRuidol) ){
+   Serial.print(valorLlanto);
+   Serial.print(">");
+   Serial.println(umbralRuidol);
+   ESTADOSERVO = "ON";
     tiempoUltimoLlanto = millis();
   }else{
     tiempoSilencio = millis();
   }
   //si despues de cierto tiempo no llora apago la mecedora
   if((tiempoSilencio - tiempoUltimoLlanto)> standby ){
-    //ESTADOSERVO = "OFF";
-        //sI reciben datos del HC05 
+    ESTADOSERVO = "OFF";
     tiempoSilencio = millis();
     tiempoUltimoLlanto = millis(); 
   }
