@@ -18,7 +18,7 @@ int posicionServo = ServoQUIETO; //Va a contener la ubicación del servo
 Servo servoMotor;
 
 //Variables del micrófono
-#define pinMicro      A5   //Pin donde está conectado el servo 
+#define pinMicro      A3   //Pin donde está conectado el servo 
 //#define umbralRuido   20  //Valor que lee el microfono en silencio
 #define standby 20000
 double valorLlanto = 0;      //variable to store the value coming from the sensor
@@ -88,7 +88,10 @@ const int sensorMojado = 9;
 
 char c = ' ';
 int flag = 1;
-
+//HUmedad y temperatura ambiental
+#include <DHT12.h>
+#include <Wire.h>     //The DHT12 uses I2C comunication.
+DHT12 dht12;          //Preset scale CELSIUS and ID 0x5c.
 void setup()
 {
     //Se configura la velocidad del puerto serie para poder imprimir en el puerto Serie
@@ -113,6 +116,8 @@ void setup()
     tiempoFinProm = 0; 
 
     pinMode(sensorMojado, INPUT);  //definir pin como entrada
+  //Wire para sensor de humedad
+  Wire.begin();
 }
  
 void loop()
@@ -130,6 +135,7 @@ void loop()
     amacarCuna(); 
     detectarLuz();
     detectarMojado();
+    //sensoresAmbientales();
 }
 /**Funcion que utiliza el BT para determinar la accion a realizar**/
 
@@ -303,8 +309,12 @@ void detectarMojado(){
       Serial.println("Detectada lluvia");
   }
   ESTADOCOLCHON = "ON";
+}
 
-  
+void sensoresAmbientales(){
+  String ambiente = "0T" + String(dht12.readTemperature()) + "H" + String(dht12.readHumidity());
+    Serial.println(ambiente);
+  enviarEstadoActualAANDROID(ambiente);
 }
 
 
