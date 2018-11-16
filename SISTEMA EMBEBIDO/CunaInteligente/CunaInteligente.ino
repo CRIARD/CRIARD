@@ -62,12 +62,15 @@ const int ledPIN = 12;
 String ESTADOLED = "";
 String ESTADOSERVO = "";
 String ESTADOMICRO = "";
+String ESTADOCOLCHON = "";
+
 String SERVOENCENDIDO  = "SE";
 String SERVOAPAGADO    = "SA";
 String LUZENCENDIDA    = "LE";
 String LUZAPAGADA      = "LA";
 String MICROENCENDIDO  = "ME";
 String MICROAPAGADO    = "MA";
+String COLCHONMOJADO   = "CM";
 
 int tiempoInicioWIFI = 0;
 int tiempoWIFI = 0;
@@ -79,6 +82,9 @@ bool estadoConexion = false;
 //Sino se utiliza esta bibioteca esto no se puede realizar y se debera conectar al pin 0 y 1, conexion Serie no pudiendo imprmir por el monitor serie
 //Al estar estos ocupados.
 SoftwareSerial BTserial(10,11); // RX | TX
+
+//variables de humedad
+const int sensorMojado = 9;
 
 char c = ' ';
 int flag = 1;
@@ -105,6 +111,8 @@ void setup()
     tiempoUltimoLlanto = millis();
     tiempoInicioProm = millis();
     tiempoFinProm = 0; 
+
+    pinMode(sensorMojado, INPUT);  //definir pin como entrada
 }
  
 void loop()
@@ -121,6 +129,7 @@ void loop()
     escucharLlanto();
     amacarCuna(); 
     detectarLuz();
+    detectarMojado();
 }
 /**Funcion que utiliza el BT para determinar la accion a realizar**/
 
@@ -142,6 +151,10 @@ void informarEstadoSensor(){
     }else{
       enviarEstadoActualAANDROID(LUZAPAGADA); 
       }
+     if(ESTADOCOLCHON == "ON"){
+      enviarEstadoActualAANDROID(COLCHONMOJADO); 
+      ESTADOCOLCHON = "OFF";
+    }
     BTserial.write('\n');
     BTserial.flush();
   }
@@ -196,7 +209,7 @@ void accionLed(float luz){
   
   
 void detectarLuz(){
-    tiempo_transcurrido=millis()-cronometro_lecturas;    
+   tiempo_transcurrido=millis()-cronometro_lecturas;    
     if(tiempo_transcurrido>ESPERA_LECTURAS){// espera no bloqueante
       
         cronometro_lecturas=millis();
@@ -205,14 +218,20 @@ void detectarLuz(){
         //Serial.print(255-(((luminosidad*coeficiente_porcentaje)*255)/100));//detectamos el porcentaje de luminosidad
         //Serial.println("%"); 
     }
-    if((255-(((luminosidad*coeficiente_porcentaje)*255)/100)) == LOW){
+    double swi = 255-(((luminosidad*coeficiente_porcentaje)*255)/100);
+    Serial.println(swi);
+    if(swi > 110){
       ESTADOLED = "OFF";
+      analogWrite(PinLED,255);  
     }else{
       ESTADOLED = "ON"; 
+      analogWrite(PinLED,swi);  
     }
-    analogWrite(PinLED,(255-(((luminosidad*coeficiente_porcentaje)*255)/100)));  
+    
     //Serial.println(luminosidad);
-  }
+       }
+  
+
 
 void amacarCuna(){
   if(ESTADOSERVO == "ON"){
@@ -255,7 +274,6 @@ void escucharLlanto(){
     */
     muestras = 0;
     sumaRuido = 0;
-   Serial.println(muestras);
   }else{
       muestras = muestras +1 ;
   sumaRuido = sumaRuido + valorLlanto;
@@ -277,3 +295,16 @@ void escucharLlanto(){
     tiempoUltimoLlanto = millis(); 
   }
 }
+
+void detectarMojado(){
+  int value = 0;
+  value = digitalRead(sensorMojado );  //lectura digital de pin
+  if (value == LOW) {
+      Serial.println("Detectada lluvia");
+  }
+  ESTADOCOLCHON = "ON";
+
+  
+}
+
+
