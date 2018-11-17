@@ -74,23 +74,23 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
             switch (item.getItemId()) {
                 case R.id.navigation_home:
 
-                    intent = new Intent(CRIArdMainActivity.this,menu_hogar.class);
-                    startActivity(intent);
-                    finish();
+                    //intent = new Intent(CRIArdMainActivity.this,menu_hogar.class);
+                    //startActivity(intent);
+                    //finish();
                     //mTextMessage.setText(R.string.title_home);
                     return true;
                 case R.id.navigation_cuna:
 
-                    intent = new Intent(CRIArdMainActivity.this,menu_cuna.class);
-                    startActivity(intent);
-                    finish();
+                    //intent = new Intent(CRIArdMainActivity.this,menu_cuna.class);
+                    //startActivity(intent);
+                    //finish();
                     //mTextMessage.setText(R.string.title_cuna);
                     return true;
                 case R.id.navigation_config:
 
-                    intent = new Intent(CRIArdMainActivity.this,MainActivity.class);
-                    startActivity(intent);
-                    finish();
+                    //intent = new Intent(CRIArdMainActivity.this,MainActivity.class);
+                    //startActivity(intent);
+                    //finish();
                     //mTextMessage.setText(R.string.title_config);
                     return true;
             }
@@ -115,8 +115,11 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         btn_musicon = (Button) findViewById(R.id.btn_microon);
         btn_musicoff = (Button) findViewById(R.id.btn_microoff);
         txt_led = (TextView) findViewById(R.id.txt_led);
+        txt_led.setText("Luz Apagada");
         txt_micro = (TextView) findViewById(R.id.txt_micro);
+        txt_micro.setText("Silencio");
         txt_servo = (TextView) findViewById(R.id.txt_servo);
+        txt_servo.setText("En Reposo");
         //obtengo el adaptador del bluethoot
         btAdapter = BluetoothAdapter.getDefaultAdapter();
         //defino el Handler de comunicacion entre el hilo Principal  el secundario.
@@ -130,12 +133,15 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         btn_musicoff.setOnClickListener(btnApagarMusica);
     }
 
-    //Listener del boton encender que envia  msj para enceder Led a Arduino atraves del Bluethoot
+    //Listener del boton encender que envia  msj para enceder Servo a Arduino atraves del Bluethoot
     private View.OnClickListener btnEncenderListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             mConnectedThread.write("1");    // Send "1" via Bluetooth
-            showToast("Mecer Cuna");        }
+            txt_servo.setText("Meciendo");
+            txt_servo.setBackgroundResource(R.drawable.encendido);
+            //showToast("Mecer Cuna");
+             }
     };
 
     //Listener del boton encender que envia  msj para Apagar Led a Arduino atraves del Bluethoot
@@ -143,22 +149,26 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         @Override
         public void onClick(View v) {
             mConnectedThread.write("2");    // Send "0" via Bluetooth
-            showToast("Frenar Cuna");
+            txt_servo.setText("En Reposo");
+           txt_servo.setBackgroundResource(R.drawable.apagado);
+            //showToast("Frenar Cuna");
         }
     };
 
     private View.OnClickListener btnEncenderMusica = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            mConnectedThread.write("5");    // Send "1" via Bluetooth
-            showToast("Sonar Musica");        }
+            //mConnectedThread.write("5");    // Send "1" via Bluetooth
+            //showToast("Sonar Musica");
+        }
     };
 
     private View.OnClickListener btnApagarMusica = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            mConnectedThread.write("6");    // Send "1" via Bluetooth
-            showToast("Apagar Musica");        }
+            //mConnectedThread.write("6");    // Send "1" via Bluetooth
+          //  showToast("Apagar Musica");
+        }
     };
 
     @Override
@@ -180,13 +190,15 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                         if(!flagAcelerometro){
                             acelerometro.setBackgroundColor(Color.parseColor("#cf091c"));
                             mConnectedThread.write("1");    // Send "1" via Bluetooth
-                            showToast("Mecer Cuna");
+                            //showToast("Mecer Cuna");
                             flagAcelerometro = true;
+                            acelerometro.setText("\n" +"Acelerometro");
                         }else {
                             acelerometro.setBackgroundColor(Color.TRANSPARENT);
                             mConnectedThread.write("2");    // Send "1" via Bluetooth
-                            showToast("Cuna en reposo");
+                            //showToast("Cuna en reposo");
                             flagAcelerometro = false;
+                            acelerometro.setText(" ");
                         }
                     }
                     break;
@@ -202,14 +214,14 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                     {
                         proximity.setBackgroundColor(Color.parseColor("#7C2F8E"));
                         mConnectedThread.write("3");    // Send "1" via Bluetooth
-                        showToast("EncenderLuz");
-                        //proximity.setText("Proximidad Detectada");
+                       // showToast("EncenderLuz");
+                       proximity.setText(" Proximidad ");
                     }
                     else {
                         proximity.setBackgroundColor(Color.parseColor("#FAFAFA"));
                         mConnectedThread.write("4");    // Send "1" via Bluetooth
-                        showToast("ApagarLuz");
-                        //proximity.setText(txt);
+                      //  showToast("ApagarLuz");
+                        proximity.setText(" ");
                     }
                     break;
 
@@ -217,13 +229,15 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
 
                     if( event.values[0] < 21) { //Celular de Erik, pueden cambiar
                         luminosidad.setBackgroundColor(Color.parseColor("#256F3E"));
-                        mConnectedThread.write("5");    // Send "1" via Bluetooth
-                        showToast("EncenderMicro");
+                        //mConnectedThread.write("5");    // Send "1" via Bluetooth
+                       // showToast("EncenderMicro");
+                        luminosidad.setText("Luz ambiente");
                     }
                     if( event.values[0] > 121) { //Celular de Erik, pueden cambiar
                         luminosidad.setBackgroundColor(Color.parseColor("#FAFAFA"));
-                        mConnectedThread.write("6");    // Send "1" via Bluetooth
-                        showToast("ApagarMicro");
+                        //mConnectedThread.write("6");    // Send "1" via Bluetooth
+                      //  showToast("ApagarMicro");
+                        luminosidad.setText(" ");
                     }
                     break;
             }
@@ -331,7 +345,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
 
         //I send a character when resuming.beginning transmission to check device is connected
         //If it is not an exception will be thrown in the write method and finish() will be called
-        mConnectedThread.write("x");
+        mConnectedThread.write("#");
 
         Ini_Sensores();
     }
@@ -353,6 +367,10 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                 {
                     //voy concatenando el msj
                     String dataInPrint;
+                    String estMicro = "";
+                    String estServo = "";
+                    String estLed="";
+                    int estMojado=-1;
                     String readMessage = (String) msg.obj;
                     recDataString.append(readMessage);
 
@@ -361,46 +379,65 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                     //cuando recibo toda una linea la muestro en el layout
                     if (endOfLineIndex > 0)
                     {
-                        String servo = recDataString.substring(0,1);
-                        String estServo = recDataString.substring(1,2);
-                        String micro = recDataString.substring(2,3);
-                        String estMicro = recDataString.substring(3,4);
-                        String led =  recDataString.substring(4,5);
-                        String estLed = recDataString.substring(5,6);
-                        if(servo.equals("S")){
-                            if (estServo.equals("E")) {
+
+                        int servo = recDataString.indexOf("S");
+                        if(servo>0){
+                            estServo = Character.toString(recDataString.charAt(servo+1));
+                        }
+                        int micro = recDataString.indexOf("M");
+                        if(micro>0) {
+                            estMicro = Character.toString(recDataString.charAt(micro + 1));
+                        }
+                        int led = recDataString.indexOf("L");
+                        if(led>0) {
+                            estLed = Character.toString(recDataString.charAt(led+1));
+                        }
+
+                        int mojado = recDataString.indexOf("H");
+                        if(mojado>0) {
+                           estMojado = Character.getNumericValue(recDataString.charAt(mojado + 1));
+                        }
+                       // int temperatura = recDataString.indexOf("T");
+                     //   Integer estTemperatura = Integer.parseInt(recDataString.substring(temperatura+1,temperatura+3));
+
+                        if(estServo.equals("E")){
                                 txt_servo.setText("Meciendo");
                                 txt_servo.setBackgroundResource(R.drawable.encendido);
                                 flagAcelerometro = true;
+
                             }
                             else {
                                 txt_servo.setText("En Reposo");
                                 txt_servo.setBackgroundResource(R.drawable.apagado);
                                 flagAcelerometro = false;
-                            }
                         }
-                        if(led.equals("L")) {
-                            if (estLed.equals("E")) {
-                                txt_led.setText("Encendido");
-                                txt_led.setBackgroundResource(R.drawable.encendido);
-                            }
-                            else {
-                                txt_led.setText("Apagado");
-                                txt_led.setBackgroundResource(R.drawable.apagado);
-                            }
+
+                        if(estLed.equals("E")){
+                            txt_led.setText("Luz Encendida");
+                            txt_led.setBackgroundResource(R.drawable.encendido);
+
                         }
-                        if(micro.equals("M")) {
-                            if (estMicro.equals("E")) {
-                                txt_micro.setText("LLorando");
-                                txt_micro.setBackgroundResource(R.drawable.encendido);
-                            }
-                            else {
-                                txt_micro.setText("Durmiendo");
-                                txt_micro.setBackgroundResource(R.drawable.apagado);
-                            }
+                        else {
+                            txt_led.setText("Luz Apagada");
+                            txt_led.setBackgroundResource(R.drawable.apagado);
+
+                        }
+                        if(estMicro.equals("E")){
+                            txt_micro.setText("Bebe \n Llorando");
+                            txt_micro.setBackgroundResource(R.drawable.encendido);
+
+                        }
+                        else {
+                            txt_micro.setText("Silencio");
+                            txt_micro.setBackgroundResource(R.drawable.apagado);
+
+                        }
+                        if((estMojado ) > 0){
+                            showToast("Cuna mojada");
                         }
                     }
-                    recDataString.delete(0, recDataString.length());
+                    //recDataString.delete(0, recDataString.length());
+                    recDataString = new StringBuilder();
                 }
             }
         };
@@ -446,7 +483,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                     //se leen los datos del Bluethoot
                     bytes = mmInStream.read(buffer);
                     String readMessage = new String(buffer, 0, bytes);
-
+                    Log.i("Mensaje BLuethoot",readMessage);
                     //se muestran en el layout de la activity, utilizando el handler del hilo
                     // principal antes mencionado
                     bluetoothIn.obtainMessage(handlerState, bytes, -1, readMessage).sendToTarget();
