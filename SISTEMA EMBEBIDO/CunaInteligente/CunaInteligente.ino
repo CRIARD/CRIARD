@@ -1,15 +1,17 @@
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
 //#include "melodias.h"
-
+int flagNotificacion = 0;
+int flagNotificacionMojado = 0;
+int flagNotificacionLuz=0;
 //Fuente https://programarfacil.com/tutoriales/fragmentos/servomotor-con-arduino/
 #include <Servo.h>
 #define ESPERA_LECTURAS 2000 // tiempo en milisegundos entre lecturas de la intensidad de la luz
 //Variables del Servo
 #define PinServo      8   //Pin donde está conectado el servo 
 #define ServoCerrado  0   // posición inicial 
-#define ServoQUIETO  0   // posición inicial 
-#define ServoAbierto 90  // posición de 0 grados
+#define ServoQUIETO  90   // posición inicial 
+#define ServoAbierto  180 // posición de 0 grados
 int tiempoInicialAmaque = 0;
 int tiempoAmaque = 0;
 int prendoCuna = 0;
@@ -64,13 +66,14 @@ String ESTADOSERVO = "";
 String ESTADOMICRO = "";
 String ESTADOCOLCHON = "";
 
-String SERVOENCENDIDO  = "SE";
-String SERVOAPAGADO    = "SA";
-String LUZENCENDIDA    = "LE";
-String LUZAPAGADA      = "LA";
-String MICROENCENDIDO  = "ME";
-String MICROAPAGADO    = "MA";
-String COLCHONMOJADO   = "CM";
+String SERVOENCENDIDO  = "E";
+String SERVOAPAGADO    = "A";
+String LUZENCENDIDA    = "E";
+String LUZAPAGADA      = "A";
+String MICROENCENDIDO  = "E";
+String MICROAPAGADO    = "A";
+String COLCHONMOJADO   = "M";
+String COLCHONMOSECO   = "S";
 
 int tiempoInicioWIFI = 0;
 int tiempoWIFI = 0;
@@ -135,6 +138,8 @@ void loop()
     amacarCuna(); 
     detectarLuz();
     detectarMojado();
+    String ambiente = "0T"  + String(dht12.readTemperature()) + "H"  + String(dht12.readHumidity());
+    Serial.println(ambiente);
     //sensoresAmbientales();
 }
 /**Funcion que utiliza el BT para determinar la accion a realizar**/
@@ -161,6 +166,9 @@ void informarEstadoSensor(){
       enviarEstadoActualAANDROID(COLCHONMOJADO); 
       ESTADOCOLCHON = "OFF";
     }
+    
+    //String ambiente = "0T" + String(dht12.readTemperature()) + "H" + String(dht12.readHumidity());
+    //enviarEstadoActualAANDROID(ambiente); 
     BTserial.write('\n');
     BTserial.flush();
   }
@@ -180,14 +188,15 @@ void analizarDato(char c)
         break;        
       case apagarCunaBT:
         ESTADOSERVO = "OFF";
+        flagNotificacion = 0;
         //enviarEstadoActualAANDROID(SERVOAPAGADO); 
         break;
       case encenderLEDBT:
-        accionLed(HIGH);
+        analogWrite(PinLED,255); 
         //enviarEstadoActualAANDROID(LUZENCENDIDA); 
         break;
       case apagarLEDBT:
-        accionLed(LOW);
+        analogWrite(PinLED,0); 
         //enviarEstadoActualAANDROID(LUZAPAGADA); 
         break;
       case encenderMusicBT:
@@ -203,39 +212,34 @@ void analizarDato(char c)
 
 
 
-/**DECLARACION DE FUNCIONES**/
-void accionLed(float luz){
-    if(luz == LOW){
-      ESTADOLED = "OFF";
-    }else{
-      ESTADOLED = "ON"; 
-    }
-    analogWrite(PinLED,luz);   
-  }
-  
-  
+/**DECLARACION DE FUNCIONES**/  
 void detectarLuz(){
    tiempo_transcurrido=millis()-cronometro_lecturas;    
     if(tiempo_transcurrido>ESPERA_LECTURAS){// espera no bloqueante
       
         cronometro_lecturas=millis();
         luminosidad=analogRead(PinLDR);
-        //Serial.print("La luminosidad es del ");
-        //Serial.print(255-(((luminosidad*coeficiente_porcentaje)*255)/100));//detectamos el porcentaje de luminosidad
-        //Serial.println("%"); 
     }
     double swi = 255-(((luminosidad*coeficiente_porcentaje)*255)/100);
-    Serial.println(swi);
     if(swi > 110){
       ESTADOLED = "OFF";
+      if(flagNotificacionLuz==1){
+        informarEstadoSensor(); 
+        flagNotificacionLuz=0;
+            }
       analogWrite(PinLED,255);  
     }else{
       ESTADOLED = "ON"; 
+      
+       if(flagNotificacionLuz==0){
+        informarEstadoSensor(); 
+        flagNotificacionLuz=1;
+            }
+            
       analogWrite(PinLED,swi);  
     }
-    
-    //Serial.println(luminosidad);
-       }
+
+}
   
 
 
@@ -264,20 +268,11 @@ void amacarCuna(){
 }
 
 void escucharLlanto(){
-  valorLlanto = (double)analogRead (pinMicro);
-
-  
+  valorLlanto = (double)analogRead (pinMicro); 
   if(muestras == 2000){
     ruidoPromedio = sumaRuido/muestras;  
     umbralRuidol = ruidoPromedio+ruidoPromedio/2;
-    /*
-    Serial.print("ruidoPromedio");
-    Serial.println(ruidoPromedio);
-    Serial.print("ruidoPromedio");
-    Serial.println(ruidoPromedio);
-    Serial.print("muestra");
-    Serial.println(muestras);
-    */
+
     muestras = 0;
     sumaRuido = 0;
   }else{
@@ -286,10 +281,11 @@ void escucharLlanto(){
   }
   
   if(umbralRuidol!=0 && (valorLlanto>umbralRuidol) ){
-   Serial.print(valorLlanto);
-   Serial.print(">");
-   Serial.println(umbralRuidol);
    ESTADOSERVO = "ON";
+    if(flagNotificacion == 0 ){
+      informarEstadoSensor(); 
+      flagNotificacion = 1;
+    } 
     tiempoUltimoLlanto = millis();
   }else{
     tiempoSilencio = millis();
@@ -297,24 +293,28 @@ void escucharLlanto(){
   //si despues de cierto tiempo no llora apago la mecedora
   if((tiempoSilencio - tiempoUltimoLlanto)> standby ){
     ESTADOSERVO = "OFF";
+    informarEstadoSensor(); 
+    flagNotificacion = 0;
     tiempoSilencio = millis();
     tiempoUltimoLlanto = millis(); 
   }
 }
 
 void detectarMojado(){
-  int value = 0;
-  value = digitalRead(sensorMojado );  //lectura digital de pin
+  int value;
+  value = digitalRead(sensorMojado);  //lectura digital de pin
   if (value == LOW) {
-      Serial.println("Detectada lluvia");
+       ESTADOCOLCHON = "ON";
+       if(flagNotificacionMojado == 0 ){
+          informarEstadoSensor(); 
+          flagNotificacionMojado = 1;
+       } 
   }
-  ESTADOCOLCHON = "ON";
+    if (value == HIGH) {
+       ESTADOCOLCHON = "OFF";
+       if(flagNotificacionMojado == 1 ){
+          informarEstadoSensor(); 
+          flagNotificacionMojado = 0;
+       } 
+  }
 }
-
-void sensoresAmbientales(){
-  String ambiente = "0T" + String(dht12.readTemperature()) + "H" + String(dht12.readHumidity());
-    Serial.println(ambiente);
-  enviarEstadoActualAANDROID(ambiente);
-}
-
-
