@@ -4,12 +4,13 @@
 int flagNotificacion = 0;
 int flagNotificacionMojado = 0;
 int flagNotificacionLuz=0;
+int flagNotificacionInicial = 0;
 //Fuente https://programarfacil.com/tutoriales/fragmentos/servomotor-con-arduino/
 #include <Servo.h>
 #define ESPERA_LECTURAS 2000 // tiempo en milisegundos entre lecturas de la intensidad de la luz
 //Variables del Servo
 #define PinServo      8   //Pin donde está conectado el servo 
-#define ServoCerrado  0   // posición inicial 
+#define ServoCerrado  90  // posición inicial 
 #define ServoQUIETO  90   // posición inicial 
 #define ServoAbierto  180 // posición de 0 grados
 int tiempoInicialAmaque = 0;
@@ -66,15 +67,15 @@ String ESTADOSERVO = "";
 String ESTADOMICRO = "";
 String ESTADOCOLCHON = "";
 
-String SERVOENCENDIDO  = "E";
-String SERVOAPAGADO    = "A";
-String LUZENCENDIDA    = "E";
-String LUZAPAGADA      = "A";
-String MICROENCENDIDO  = "E";
-String MICROAPAGADO    = "A";
-String COLCHONMOJADO   = "M";
-String COLCHONMOSECO   = "S";
-
+String SERVOENCENDIDO  = "SE";
+String SERVOAPAGADO    = "SA";
+String LUZENCENDIDA    = "LE";
+String LUZAPAGADA      = "LA";
+String MICROENCENDIDO  = "ME";
+String MICROAPAGADO    = "MA";
+String COLCHONMOJADO   = "H1";
+String COLCHONSECO     = "H0";
+String MENSAJE = "#";
 int tiempoInicioWIFI = 0;
 int tiempoWIFI = 0;
 #define DEBUG true
@@ -124,52 +125,58 @@ void setup()
 }
  
 void loop()
-{
-    
+{    
    //sI reciben datos del HC05 
     if (BTserial.available())
     {                
       //se los lee y se los muestra en el monitor serie
       c = BTserial.read();    
       analizarDato(c);   
-      informarEstadoSensor();            
-    }   
+      if(c == "#"){
+        informarEstadoSensor();  
+      }          
+    }
     escucharLlanto();
     amacarCuna(); 
     detectarLuz();
     detectarMojado();
-    String ambiente = "0T"  + String(dht12.readTemperature()) + "H"  + String(dht12.readHumidity());
-    Serial.println(ambiente);
+    //String ambiente = "0T"  + String(dht12.readTemperature()) + "H"  + String(dht12.readHumidity());
+    //Serial.println(ambiente);
     //sensoresAmbientales();
 }
 /**Funcion que utiliza el BT para determinar la accion a realizar**/
 
 //ENVIAR ESTADOS A LA APLICACION
 void informarEstadoSensor(){
-    BTserial.write("0");//Dato que envio de entrada para que no me borre el primer caracter del mensaje
+    //BTserial.write("0");//Dato que envio de entrada para que no me borre el primer caracter del mensaje
     if(ESTADOSERVO == "ON"){
-      enviarEstadoActualAANDROID(SERVOENCENDIDO); 
+      MENSAJE += SERVOENCENDIDO;
     }else{
-      enviarEstadoActualAANDROID(SERVOAPAGADO); 
+      MENSAJE += SERVOAPAGADO;
       }
     if(ESTADOMICRO == "ON"){
-      enviarEstadoActualAANDROID(MICROENCENDIDO); 
+      MENSAJE += MICROENCENDIDO;
     }else{
-      enviarEstadoActualAANDROID(MICROAPAGADO); 
+      MENSAJE += MICROAPAGADO;
       }
     if(ESTADOLED == "ON"){
-      enviarEstadoActualAANDROID(LUZENCENDIDA); 
+      MENSAJE += LUZENCENDIDA;
     }else{
-      enviarEstadoActualAANDROID(LUZAPAGADA); 
+      MENSAJE += LUZAPAGADA;
       }
-     if(ESTADOCOLCHON == "ON"){
-      enviarEstadoActualAANDROID(COLCHONMOJADO); 
+    if(ESTADOCOLCHON == "ON"){
+      MENSAJE += COLCHONMOJADO;
       ESTADOCOLCHON = "OFF";
-    }
+    }else{
+      MENSAJE += COLCHONSECO;
+      }
     
     //String ambiente = "0T" + String(dht12.readTemperature()) + "H" + String(dht12.readHumidity());
     //enviarEstadoActualAANDROID(ambiente); 
+    enviarEstadoActualAANDROID(MENSAJE); 
     BTserial.write('\n');
+    Serial.println(MENSAJE);
+    MENSAJE = "#";
     BTserial.flush();
   }
 
@@ -182,30 +189,31 @@ void analizarDato(char c)
 {
   switch(c){
       case encenderCunaBT:
+      Serial.println("Solicitud recibida: " + c);
         tiempoInicialAmaque = millis();
         ESTADOSERVO = "ON"; 
-        //enviarEstadoActualAANDROID(SERVOENCENDIDO);
+        //flagNotificacion = 0;
         break;        
       case apagarCunaBT:
+      Serial.println("Solicitud recibida: " + c);
         ESTADOSERVO = "OFF";
-        flagNotificacion = 0;
-        //enviarEstadoActualAANDROID(SERVOAPAGADO); 
+        //flagNotificacion = 1;
         break;
       case encenderLEDBT:
+      Serial.println("Solicitud recibida: " + c);
         analogWrite(PinLED,255); 
-        //enviarEstadoActualAANDROID(LUZENCENDIDA); 
         break;
       case apagarLEDBT:
+      Serial.println("Solicitud recibida: " + c);
         analogWrite(PinLED,0); 
-        //enviarEstadoActualAANDROID(LUZAPAGADA); 
         break;
       case encenderMusicBT:
+      Serial.println("Solicitud recibida: " + c);
         //sonarMelody1();
-        //enviarEstadoActualAANDROID(MICROENCENDIDO); 
         break;
       case apagarMusicBT:
+      Serial.println("Solicitud recibida: " + c);
         //apagarMelody();
-        //enviarEstadoActualAANDROID(MICROAPAGADO); 
         break;
     }
 }
@@ -245,6 +253,10 @@ void detectarLuz(){
 
 void amacarCuna(){
   if(ESTADOSERVO == "ON"){
+    if(flagNotificacion == 0 ){
+      informarEstadoSensor(); 
+      flagNotificacion = 1;
+    } 
     tiempoAmaque = millis()-tiempoInicialAmaque;
     if(tiempoAmaque > 20){
     if(amacar==0){
@@ -263,6 +275,10 @@ void amacarCuna(){
     tiempoInicialAmaque=millis();
     }
   }else{
+    if(flagNotificacion == 1 ){
+      informarEstadoSensor(); 
+      flagNotificacion = 0;
+    } 
       servoMotor.write(ServoQUIETO); 
     }  
 }
@@ -282,19 +298,16 @@ void escucharLlanto(){
   
   if(umbralRuidol!=0 && (valorLlanto>umbralRuidol) ){
    ESTADOSERVO = "ON";
-    if(flagNotificacion == 0 ){
-      informarEstadoSensor(); 
-      flagNotificacion = 1;
-    } 
+   ESTADOMICRO = "ON";
     tiempoUltimoLlanto = millis();
+    tiempoInicialAmaque = millis();
   }else{
     tiempoSilencio = millis();
   }
   //si despues de cierto tiempo no llora apago la mecedora
   if((tiempoSilencio - tiempoUltimoLlanto)> standby ){
     ESTADOSERVO = "OFF";
-    informarEstadoSensor(); 
-    flagNotificacion = 0;
+    ESTADOMICRO = "OFF";
     tiempoSilencio = millis();
     tiempoUltimoLlanto = millis(); 
   }
