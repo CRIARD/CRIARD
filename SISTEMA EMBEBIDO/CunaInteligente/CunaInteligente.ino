@@ -215,10 +215,11 @@ void analizarDato(char c)
       Serial.println("Solicitud recibida: " + c);
         //apagarMelody();
         break;
+      default:
+        Serial.print(c);
+        break;
     }
 }
-
-
 
 /**DECLARACION DE FUNCIONES**/  
 void detectarLuz(){
@@ -246,11 +247,8 @@ void detectarLuz(){
             
       analogWrite(PinLED,swi);  
     }
-
 }
   
-
-
 void amacarCuna(){
   if(ESTADOSERVO == "ON"){
     if(flagNotificacion == 0 ){
@@ -292,8 +290,8 @@ void escucharLlanto(){
     muestras = 0;
     sumaRuido = 0;
   }else{
-      muestras = muestras +1 ;
-  sumaRuido = sumaRuido + valorLlanto;
+    muestras = muestras +1 ;
+    sumaRuido = sumaRuido + valorLlanto;
   }
   
   if(umbralRuidol!=0 && (valorLlanto>umbralRuidol) ){
