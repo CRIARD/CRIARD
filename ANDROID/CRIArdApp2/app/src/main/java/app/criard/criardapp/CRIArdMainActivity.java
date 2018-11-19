@@ -51,6 +51,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     private Button btn_musicoff;
     Handler bluetoothIn;
     private boolean flagAcelerometro;
+    private boolean flagLuz;
     final int handlerState = 0; //used to identify handler message
 
     private BluetoothAdapter btAdapter = null;
@@ -228,10 +229,17 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                 case Sensor.TYPE_LIGHT :
 
                     if( event.values[0] < 21) { //Celular de Erik, pueden cambiar
-                        luminosidad.setBackgroundColor(Color.parseColor("#256F3E"));
-                        //mConnectedThread.write("5");    // Send "1" via Bluetooth
-                       // showToast("EncenderMicro");
-                        luminosidad.setText("Luz ambiente");
+                        if(!flagLuz) {
+                            luminosidad.setBackgroundColor(Color.parseColor("#256F3E"));
+                            //mConnectedThread.write("5");    // Send "1" via Bluetooth
+                            flagLuz=true;
+                            luminosidad.setText("Luz ambiente");
+                        }else{
+                            luminosidad.setBackgroundColor(Color.TRANSPARENT);
+                            //mConnectedThread.write("5");    // Send "1" via Bluetooth
+                            flagLuz=false;
+                            luminosidad.setText(" ");
+                        }
                     }
                     if( event.values[0] > 121) { //Celular de Erik, pueden cambiar
                         luminosidad.setBackgroundColor(Color.parseColor("#FAFAFA"));
@@ -313,7 +321,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         BluetoothDevice device = btAdapter.getRemoteDevice(address);
 
         //se realiza la conexion del Bluethoot crea y se conectandose a atraves de un socket
-        try
+      /*  try
         {
             btSocket = createBluetoothSocket(device);
         }
@@ -346,7 +354,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         //I send a character when resuming.beginning transmission to check device is connected
         //If it is not an exception will be thrown in the write method and finish() will be called
         mConnectedThread.write("#");
-
+*/
         Ini_Sensores();
     }
 
@@ -453,7 +461,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         private final OutputStream mmOutStream;
 
         //Constructor de la clase del hilo secundario
-        public ConnectedThread(BluetoothSocket socket)
+        public ConnectedThread(BluetoothSocket socket)// cambiar aqui
         {
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
