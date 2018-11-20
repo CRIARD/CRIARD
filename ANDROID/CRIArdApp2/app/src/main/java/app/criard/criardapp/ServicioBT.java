@@ -7,7 +7,9 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
@@ -19,6 +21,9 @@ import java.util.UUID;
 
 public class ServicioBT extends Service {
 
+    private HandlerThread handlerThread;
+    private LooperThread loop;
+    Handler handler;
     private BluetoothAdapter btAdapter = null;
     private BluetoothSocket btSocket = null;
     // String for MAC address del Hc05
@@ -61,6 +66,11 @@ public class ServicioBT extends Service {
         //I send a character when resuming.beginning transmission to check device is connected
         //If it is not an exception will be thrown in the write method and finish() will be called
         mConnectedThread.write("#");
+
+        /**Creo el Handler para comuniar el hilo principal con el servicio**/
+        loop = new LooperThread("hiloServicio");
+        loop.start();//inicio el looper
+        handler = new Handler(loop.getLooper());
 
     }
 

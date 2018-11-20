@@ -10,6 +10,9 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.HandlerThread;
+import android.os.Looper;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.support.design.widget.BottomNavigationView;
 import android.support.annotation.NonNull;
@@ -50,6 +53,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     private Button btn_musicon;
     private Button btn_musicoff;
     Handler bluetoothIn;
+    Handler servicio;
     private boolean flagAcelerometro;
     private boolean flagLuz;
     final int handlerState = 0; //used to identify handler message
@@ -159,6 +163,9 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     private View.OnClickListener btnEncenderMusica = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
+            Message msg = new Message();
+            msg.obj = "Mensaje del hilo principal";
+            servicio.sendMessage(msg);
             //mConnectedThread.write("5");    // Send "1" via Bluetooth
             //showToast("Sonar Musica");
         }
@@ -307,18 +314,20 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         super.onRestart();
     }
 
+
     @Override
     protected void onResume()
     {
         super.onResume();
-
+        //servicio = new Handler((Handler.Callback) new HandlerThread("hiloServicio"));
+        servicio = new Handler();
         //Obtengo el parametro, aplicando un Bundle, que me indica la Mac Adress del HC05
-        Intent intent=getIntent();
-        Bundle extras=intent.getExtras();
+        //Intent intent=getIntent();
+        //Bundle extras=intent.getExtras();
 
-        address= extras.getString("Direccion_Bluethoot");
+        //address= extras.getString("Direccion_Bluethoot");
 
-        BluetoothDevice device = btAdapter.getRemoteDevice(address);
+        //BluetoothDevice device = btAdapter.getRemoteDevice(address);
 
         //se realiza la conexion del Bluethoot crea y se conectandose a atraves de un socket
       /*  try
@@ -519,5 +528,10 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 
+    /**Prueba MQueue**/
+    public class conectionService extends Thread {
+
+
+    }
 
 }
