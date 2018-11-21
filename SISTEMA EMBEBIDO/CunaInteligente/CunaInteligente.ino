@@ -140,11 +140,6 @@ void loop()
     hamacarCuna(); 
     detectarLuz();
     detectarMojado();
-   
-    
-    //String ambiente = "0T"  + String(dht12.readTemperature()) + "H"  + String(dht12.readHumidity());
-    //Serial.println(ambiente);
-    //sensoresAmbientales();
 }
 /**Funcion que utiliza el BT para determinar la accion a realizar**/
 
@@ -172,8 +167,7 @@ void informarEstadoSensor(){
     }else{
       MENSAJE += COLCHONSECO;
       }
-    //String ambiente = "0T" + String(dht.readTemperature()) + "H" + String(dht.readHumidity());
-    //enviarEstadoActualAANDROID(ambiente); 
+    MENSAJE +=  "T" + String(dht.readTemperature()) + "H" + String(dht.readHumidity());
     enviarEstadoActualAANDROID(MENSAJE); 
     BTserial.write('\n');
     Serial.println(MENSAJE);
@@ -193,12 +187,10 @@ void analizarDato(char c)
       Serial.println("Solicitud recibida: " + c);
         tiempoInicialAmaque = millis();
         ESTADOSERVO = "ON"; 
-        //flagNotificacion = 0;
         break;        
       case apagarCunaBT:
       Serial.println("Solicitud recibida: " + c);
         ESTADOSERVO = "OFF";
-        //flagNotificacion = 1;
         break;
       case encenderLEDBT:
       Serial.println("Solicitud recibida: " + c);
@@ -232,22 +224,13 @@ void detectarLuz(){
   int valor; // Variable para cálculos.
    tiempo_transcurrido=millis()-cronometro_lecturas;    
     if(tiempo_transcurrido>ESPERA_LECTURAS){// espera no bloqueante
-      
         cronometro_lecturas=millis();
         luminosidad=analogRead(PinLDR);
-    //Serial.print("luminosidad: ");  
-    //Serial.println(luminosidad);
-    //Serial.print("porcentaje: ");
-    //Serial.print(luminosidad*coeficiente_porcentaje);
-   // Serial.println("%");
     }
     //*************************Comentado por Vale***********************//
     //le pasamos el valor de luminosidad al ldr
-    //double swi = 255-(((luminosidad*coeficiente_porcentaje)*255)/100);
     double swi= luminosidad*coeficiente_porcentaje;
-  /*
-    Serial.print("multiplicacion ");
-    Serial.print(swi*coeficiente_porcentaje);*/
+    
     if(swi < 130.0){
       ESTADOLED = "OFF";
       if(flagNotificacionLuz==1){
@@ -257,10 +240,6 @@ void detectarLuz(){
          analogWrite(PinLED,255);
     }else{
       ESTADOLED = "ON";
-      //Serial.print("valor de luz que quiero que muestre :"); 
-    //  Serial.println(swi*coeficiente_porcentaje);
-    
-      
        if(flagNotificacionLuz==0){
         informarEstadoSensor(); 
         flagNotificacionLuz=1;
