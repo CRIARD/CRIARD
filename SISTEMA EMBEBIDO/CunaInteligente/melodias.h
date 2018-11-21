@@ -249,6 +249,7 @@ int beats5[] = {
   1, 2, 2, 2, 2, 1, 2, 2, 3, 3, 3, 3, 2, 2, 3, 3,
   2, 2, 2, 1
 };
+
 int MAX_COUNT = sizeof(melody1) / 2;
 long tempo = 10000;
 int pause = 1000;

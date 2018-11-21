@@ -1,3 +1,4 @@
+#include <DHT.h>
 #include <Servo.h>
 #include <SoftwareSerial.h>
 #include <SPI.h>
@@ -9,6 +10,7 @@
 #define pinMicro      A3  //Pin donde está conectado el servo 
 #define PinLDR        A1  // Pin donde esta conectado el LDR
 #define PinLED        6   // Pin donde esta conectado el LED (PWM)
+#define PinLED2        13   // Pin donde esta conectado el LED que se activa con sensor proximidad desde celular
 #define PinBuzzer     12  // Pin donde esta conectado el buzzer
 #define sensorMojado  9   //variables de humedad
 #define DHTPIN        2   // Definimos el pin digital donde se conecta el sensor
@@ -18,7 +20,7 @@ int flagNotificacion = 0;
 int flagNotificacionMojado = 0;
 int flagNotificacionLuz=0;
 int flagNotificacionInicial = 0;
-int flagBuzzer=0;
+int flagBuzzer;
 
 
 //Variables del Servo
@@ -28,7 +30,7 @@ int flagBuzzer=0;
 int tiempoInicialAmaque = 0;
 int tiempoAmaque = 0;
 int prendoCuna = 0;
-int amacar = 0;   //flag para amacar izquierda o derecha
+int hamacar = 0;   //flag para hamacar izquierda o derecha
 int posicionServo = ServoQUIETO; //Va a contener la ubicación del servo
 Servo servoMotor;
 
@@ -103,12 +105,13 @@ void setup()
 
     servoMotor.attach(PinServo); // el servo trabajará desde el pin definido como PinServo
     servoMotor.write(ServoCerrado);   // Desplazamos a la posición 0
-  
+    flagBuzzer=0;
     pinMode(PinLDR,INPUT); //Defino el tipo de pin para el LDR (Entrada)
     pinMode(PinLED,OUTPUT); //Defino el tipo de pin para el LED (Salida)
+     pinMode(PinLED2,OUTPUT); //Defino el tipo de pin para el LED (Salida)
     pinMode(sensorMojado, INPUT);  //definir pin como entrada
     dht.begin();// Comenzamos el sensor DHT
-
+    analogWrite(PinLED2,255); 
     
     iniciarMelodia(PinBuzzer);
     tiempoInicioConex = millis();
@@ -134,7 +137,7 @@ void loop()
       }          
     }
     escucharLlanto();
-    amacarCuna(); 
+    hamacarCuna(); 
     detectarLuz();
     detectarMojado();
    
@@ -199,17 +202,18 @@ void analizarDato(char c)
         break;
       case encenderLEDBT:
       Serial.println("Solicitud recibida: " + c);
-        analogWrite(PinLED,255); 
+        analogWrite(PinLED2,0); 
         break;
       case apagarLEDBT:
       Serial.println("Solicitud recibida: " + c);
-        analogWrite(PinLED,0); 
+        analogWrite(PinLED2,255); 
         break;
       case encenderMusicBT:
       Serial.println("Solicitud recibida: " + c);
         
         if(flagBuzzer==0){
-          sonarMelody5();
+         sonarMelody4();
+          sonarMelody4();
           }
         flagBuzzer=1;
         break;
@@ -269,7 +273,7 @@ void detectarLuz(){
     }
 }
   
-void amacarCuna(){
+void hamacarCuna(){
   if(ESTADOSERVO == "ON"){
     if(flagNotificacion == 0 ){
       informarEstadoSensor(); 
@@ -277,17 +281,17 @@ void amacarCuna(){
     } 
     tiempoAmaque = millis()-tiempoInicialAmaque;
     if(tiempoAmaque > 20){
-    if(amacar==0){
+    if(hamacar==0){
       posicionServo ++;
       servoMotor.write(posicionServo); 
       if(posicionServo == ServoAbierto){
-        amacar=1;
+        hamacar=1;
       }
     }else{
       posicionServo --;
       servoMotor.write(posicionServo);
       if(posicionServo == ServoCerrado){
-        amacar=0;
+        hamacar=0;
       }
     }
     tiempoInicialAmaque=millis();
