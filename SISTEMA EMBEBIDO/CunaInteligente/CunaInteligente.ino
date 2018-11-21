@@ -1,12 +1,15 @@
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
-//#include "melodias.h"
+#include "melodias.h"
+//#include "melodia_mario.h"
+#include <Servo.h>
 int flagNotificacion = 0;
 int flagNotificacionMojado = 0;
 int flagNotificacionLuz=0;
 int flagNotificacionInicial = 0;
+int flagBuzzer=0;
 //Fuente https://programarfacil.com/tutoriales/fragmentos/servomotor-con-arduino/
-#include <Servo.h>
+
 #define ESPERA_LECTURAS 2000 // tiempo en milisegundos entre lecturas de la intensidad de la luz
 //Variables del Servo
 #define PinServo      8   //Pin donde está conectado el servo 
@@ -40,7 +43,7 @@ double umbralRuidol= 80;
 long cronometro_lecturas=0;
 long tiempo_transcurrido;
 unsigned int luminosidad;
-float coeficiente_porcentaje=100.0/1023.0; // El valor de la entrada analógica va de 0 a 1023 y se quiere convertir a porcentaje que va de cero a 100
+double coeficiente_porcentaje=255.0/1023.0; //100.0/1023.0; // El valor de la entrada analógica va de 0 a 1023 y se quiere convertir a porcentaje que va de cero a 100
 
 #include <SoftwareSerial.h>
 #include <SPI.h>
@@ -49,10 +52,10 @@ float coeficiente_porcentaje=100.0/1023.0; // El valor de la entrada analógica 
  // arduino Tx (pin 3) ---- ESP8266 Rx
 
 //Variables del led
-const int ledPIN = 12;
+
 
 //variables del buzzer
-#define PinBuzzer 4 // Pin donde esta conectado el buzzer
+#define PinBuzzer 12// Pin donde esta conectado el buzzer
 //Variables de mensajes Bluetooth
 #define encenderCunaBT  '1'
 #define apagarCunaBT    '2'
@@ -111,7 +114,7 @@ void setup()
   
     pinMode(PinLDR,INPUT); //Defino el tipo de pin para el LDR (Entrada)
     pinMode(PinLED,OUTPUT); //Defino el tipo de pin para el LED (Salida)
-    
+    iniciarMelodia(PinBuzzer);
     tiempoInicioWIFI = millis();
     tiempoInicialAmaque = millis();
     tiempoSilencio = millis();
@@ -140,6 +143,8 @@ void loop()
     amacarCuna(); 
     detectarLuz();
     detectarMojado();
+   
+    
     //String ambiente = "0T"  + String(dht12.readTemperature()) + "H"  + String(dht12.readHumidity());
     //Serial.println(ambiente);
     //sensoresAmbientales();
@@ -209,11 +214,15 @@ void analizarDato(char c)
         break;
       case encenderMusicBT:
       Serial.println("Solicitud recibida: " + c);
-        //sonarMelody1();
+        
+        if(flagBuzzer==0){
+          sonarMelody5();
+          }
+        flagBuzzer=1;
         break;
       case apagarMusicBT:
       Serial.println("Solicitud recibida: " + c);
-        //apagarMelody();
+        apagarMelody();
         break;
       default:
         Serial.print(c);
@@ -223,22 +232,37 @@ void analizarDato(char c)
 
 /**DECLARACION DE FUNCIONES**/  
 void detectarLuz(){
+  int valor; // Variable para cálculos.
    tiempo_transcurrido=millis()-cronometro_lecturas;    
     if(tiempo_transcurrido>ESPERA_LECTURAS){// espera no bloqueante
       
         cronometro_lecturas=millis();
         luminosidad=analogRead(PinLDR);
+    //Serial.print("luminosidad: ");  
+    //Serial.println(luminosidad);
+    //Serial.print("porcentaje: ");
+    //Serial.print(luminosidad*coeficiente_porcentaje);
+   // Serial.println("%");
     }
-    double swi = 255-(((luminosidad*coeficiente_porcentaje)*255)/100);
-    if(swi > 110){
+    //*************************Comentado por Vale***********************//
+    //le pasamos el valor de luminosidad al ldr
+    //double swi = 255-(((luminosidad*coeficiente_porcentaje)*255)/100);
+    double swi= luminosidad*coeficiente_porcentaje;
+  /*
+    Serial.print("multiplicacion ");
+    Serial.print(swi*coeficiente_porcentaje);*/
+    if(swi < 130.0){
       ESTADOLED = "OFF";
       if(flagNotificacionLuz==1){
         informarEstadoSensor(); 
         flagNotificacionLuz=0;
             }
-      analogWrite(PinLED,255);  
+         analogWrite(PinLED,255);
     }else{
-      ESTADOLED = "ON"; 
+      ESTADOLED = "ON";
+      //Serial.print("valor de luz que quiero que muestre :"); 
+    //  Serial.println(swi*coeficiente_porcentaje);
+    
       
        if(flagNotificacionLuz==0){
         informarEstadoSensor(); 
@@ -246,6 +270,9 @@ void detectarLuz(){
             }
             
       analogWrite(PinLED,swi);  
+      if(swi>225.0){
+        analogWrite(PinLED,0);  
+      }
     }
 }
   
