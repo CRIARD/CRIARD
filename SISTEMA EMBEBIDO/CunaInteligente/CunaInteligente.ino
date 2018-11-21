@@ -1,18 +1,27 @@
-#include <SoftwareSerial.h>
-#include <ArduinoJson.h>
-#include "melodias.h"
-//#include "melodia_mario.h"
 #include <Servo.h>
+#include <SoftwareSerial.h>
+#include <SPI.h>
+#include <DHT.h>
+#include "melodias.h"
+
+//Pines utilizados:
+#define PinServo      8   //Pin donde está conectado el servo 
+#define pinMicro      A3  //Pin donde está conectado el servo 
+#define PinLDR        A1  // Pin donde esta conectado el LDR
+#define PinLED        6   // Pin donde esta conectado el LED (PWM)
+#define PinBuzzer     12  // Pin donde esta conectado el buzzer
+#define sensorMojado  9   //variables de humedad
+#define DHTPIN        2   // Definimos el pin digital donde se conecta el sensor
+
+//Banderas de sensores entre Android y Arduino
 int flagNotificacion = 0;
 int flagNotificacionMojado = 0;
 int flagNotificacionLuz=0;
 int flagNotificacionInicial = 0;
 int flagBuzzer=0;
-//Fuente https://programarfacil.com/tutoriales/fragmentos/servomotor-con-arduino/
 
-#define ESPERA_LECTURAS 2000 // tiempo en milisegundos entre lecturas de la intensidad de la luz
+
 //Variables del Servo
-#define PinServo      8   //Pin donde está conectado el servo 
 #define ServoCerrado  90  // posición inicial 
 #define ServoQUIETO  90   // posición inicial 
 #define ServoAbierto  180 // posición de 0 grados
@@ -24,8 +33,6 @@ int posicionServo = ServoQUIETO; //Va a contener la ubicación del servo
 Servo servoMotor;
 
 //Variables del micrófono
-#define pinMicro      A3   //Pin donde está conectado el servo 
-//#define umbralRuido   20  //Valor que lee el microfono en silencio
 #define standby 20000
 double valorLlanto = 0;      //variable to store the value coming from the sensor
 int tiempoUltimoLlanto = 0;
@@ -38,24 +45,12 @@ double ruidoPromedio = 0;
 double umbralRuidol= 80;
 
 //Variables LDR
-#define PinLDR A1 // Pin donde esta conectado el LDR
-#define PinLED 6 // Pin donde esta conectado el LED (PWM)
+#define ESPERA_LECTURAS 2000 // tiempo en milisegundos entre lecturas de la intensidad de la luz
 long cronometro_lecturas=0;
 long tiempo_transcurrido;
 unsigned int luminosidad;
 double coeficiente_porcentaje=255.0/1023.0; //100.0/1023.0; // El valor de la entrada analógica va de 0 a 1023 y se quiere convertir a porcentaje que va de cero a 100
 
-#include <SoftwareSerial.h>
-#include <SPI.h>
-#include <Ethernet.h>
- // arduino Rx (pin 2) ---- ESP8266 Tx
- // arduino Tx (pin 3) ---- ESP8266 Rx
-
-//Variables del led
-
-
-//variables del buzzer
-#define PinBuzzer 12// Pin donde esta conectado el buzzer
 //Variables de mensajes Bluetooth
 #define encenderCunaBT  '1'
 #define apagarCunaBT    '2'
@@ -79,26 +74,23 @@ String MICROAPAGADO    = "MA";
 String COLCHONMOJADO   = "H1";
 String COLCHONSECO     = "H0";
 String MENSAJE = "#";
-int tiempoInicioWIFI = 0;
-int tiempoWIFI = 0;
-#define DEBUG true
-int conexionID = 0;
-String peticion = "";
-bool estadoConexion = false;
+int tiempoInicioConex = 0;
+
+
 //Al utilizar la biblioteca SoftwareSerial los pines RX y TX para la transmicion serie de Bluethoot se pueden cambiar mapear a otros pines.
 //Sino se utiliza esta bibioteca esto no se puede realizar y se debera conectar al pin 0 y 1, conexion Serie no pudiendo imprmir por el monitor serie
 //Al estar estos ocupados.
 SoftwareSerial BTserial(10,11); // RX | TX
 
-//variables de humedad
-const int sensorMojado = 9;
 
 char c = ' ';
 int flag = 1;
-//HUmedad y temperatura ambiental
-#include <DHT12.h>
-#include <Wire.h>     //The DHT12 uses I2C comunication.
-DHT12 dht12;          //Preset scale CELSIUS and ID 0x5c.
+//Humedad y temperatura ambiental
+#define DHTTYPE DHT11 // Dependiendo del tipo de sensor
+DHT dht(DHTPIN, DHTTYPE);// Inicializamos el sensor DHT11
+
+
+
 void setup()
 {
     //Se configura la velocidad del puerto serie para poder imprimir en el puerto Serie
@@ -114,17 +106,19 @@ void setup()
   
     pinMode(PinLDR,INPUT); //Defino el tipo de pin para el LDR (Entrada)
     pinMode(PinLED,OUTPUT); //Defino el tipo de pin para el LED (Salida)
+    pinMode(sensorMojado, INPUT);  //definir pin como entrada
+    dht.begin();// Comenzamos el sensor DHT
+
+    
     iniciarMelodia(PinBuzzer);
-    tiempoInicioWIFI = millis();
+    tiempoInicioConex = millis();
     tiempoInicialAmaque = millis();
     tiempoSilencio = millis();
     tiempoUltimoLlanto = millis();
     tiempoInicioProm = millis();
     tiempoFinProm = 0; 
 
-    pinMode(sensorMojado, INPUT);  //definir pin como entrada
-  //Wire para sensor de humedad
-  Wire.begin();
+    
 }
  
 void loop()
@@ -175,8 +169,7 @@ void informarEstadoSensor(){
     }else{
       MENSAJE += COLCHONSECO;
       }
-    
-    //String ambiente = "0T" + String(dht12.readTemperature()) + "H" + String(dht12.readHumidity());
+    //String ambiente = "0T" + String(dht.readTemperature()) + "H" + String(dht.readHumidity());
     //enviarEstadoActualAANDROID(ambiente); 
     enviarEstadoActualAANDROID(MENSAJE); 
     BTserial.write('\n');
