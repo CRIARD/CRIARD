@@ -1,7 +1,13 @@
 package app.criard.criardapp;
 
 import android.annotation.SuppressLint;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.hardware.Sensor;
@@ -11,8 +17,11 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.HandlerThread;
+import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.support.design.widget.BottomNavigationView;
 import android.support.annotation.NonNull;
@@ -52,18 +61,17 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     private Button btn_apagar;
     private Button btn_musicon;
     private Button btn_musicoff;
-    Handler bluetoothIn;
-    Handler servicio;
+    private Message messagein;
+    Messenger mService = null;
+    boolean mBound;
+    int count = 0;
     private boolean flagAcelerometro;
-    private boolean flagLuz;
+    private boolean flagLuz = false;
     final int handlerState = 0; //used to identify handler message
 
     private BluetoothAdapter btAdapter = null;
     private BluetoothSocket btSocket = null;
     private StringBuilder recDataString = new StringBuilder();
-
-    private ConnectedThread mConnectedThread;
-
     // SPP UUID service  - Funciona en la mayoria de los dispositivos
     private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
@@ -78,25 +86,10 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.navigation_home:
-
-                    //intent = new Intent(CRIArdMainActivity.this,menu_hogar.class);
-                    //startActivity(intent);
-                    //finish();
-                    //mTextMessage.setText(R.string.title_home);
                     return true;
                 case R.id.navigation_cuna:
-
-                    //intent = new Intent(CRIArdMainActivity.this,menu_cuna.class);
-                    //startActivity(intent);
-                    //finish();
-                    //mTextMessage.setText(R.string.title_cuna);
                     return true;
                 case R.id.navigation_config:
-
-                    //intent = new Intent(CRIArdMainActivity.this,MainActivity.class);
-                    //startActivity(intent);
-                    //finish();
-                    //mTextMessage.setText(R.string.title_config);
                     return true;
             }
             return false;
@@ -126,26 +119,34 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         txt_servo = (TextView) findViewById(R.id.txt_servo);
         txt_servo.setText("En Reposo");
         //obtengo el adaptador del bluethoot
-        btAdapter = BluetoothAdapter.getDefaultAdapter();
+        //btAdapter = BluetoothAdapter.getDefaultAdapter();
         //defino el Handler de comunicacion entre el hilo Principal  el secundario.
         //El hilo secundario va a mostrar informacion al layout atraves utilizando indeirectamente a este handler
-        bluetoothIn = Handler_Msg_Hilo_Principal();
+
 
         //defino los handlers para los botones Apagar y encender
         btn_encender.setOnClickListener(btnEncenderListener);
         btn_apagar.setOnClickListener(btnApagarListener);
         btn_musicon.setOnClickListener(btnEncenderMusica);
         btn_musicoff.setOnClickListener(btnApagarMusica);
+
+        Intent intent = new Intent(getApplicationContext(), ServicioBT.class);
+        Messenger messenger = new Messenger(handler);
+        intent.putExtra("MESSENGER", messenger);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
     //Listener del boton encender que envia  msj para enceder Servo a Arduino atraves del Bluethoot
     private View.OnClickListener btnEncenderListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            mConnectedThread.write("1");    // Send "1" via Bluetooth
-            txt_servo.setText("Meciendo");
-            txt_servo.setBackgroundResource(R.drawable.encendido);
-            //showToast("Mecer Cuna");
+            if (!mBound) return;
+            Message msg = Message.obtain(null, ServicioBT.GET_SERVO_ON, 0, 0);
+            try {
+                mService.send(msg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
              }
     };
 
@@ -153,29 +154,39 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     private View.OnClickListener btnApagarListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            mConnectedThread.write("2");    // Send "0" via Bluetooth
-            txt_servo.setText("En Reposo");
-           txt_servo.setBackgroundResource(R.drawable.apagado);
-            //showToast("Frenar Cuna");
+            if (!mBound) return;
+            Message msg = Message.obtain(null, ServicioBT.GET_SERVO_OFF, 0, 0);
+            try {
+                mService.send(msg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
     };
 
     private View.OnClickListener btnEncenderMusica = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            Message msg = new Message();
-            msg.obj = "Mensaje del hilo principal";
-            servicio.sendMessage(msg);
-            //mConnectedThread.write("5");    // Send "1" via Bluetooth
-            //showToast("Sonar Musica");
+            if (!mBound) return;
+            Message msg = Message.obtain(null, ServicioBT.GET_MUSICA_ON, 0, 0);
+            try {
+                mService.send(msg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
     };
 
     private View.OnClickListener btnApagarMusica = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            //mConnectedThread.write("6");    // Send "1" via Bluetooth
-          //  showToast("Apagar Musica");
+            if (!mBound) return;
+            Message msg = Message.obtain(null, ServicioBT.GET_MUSICA_OFF, 0, 0);
+            try {
+                mService.send(msg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
     };
 
@@ -197,14 +208,24 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
 
                         if(!flagAcelerometro){
                             acelerometro.setBackgroundColor(Color.parseColor("#cf091c"));
-                            mConnectedThread.write("1");    // Send "1" via Bluetooth
-                            //showToast("Mecer Cuna");
+                            if (!mBound) return;
+                            Message msg = Message.obtain(null, ServicioBT.GET_SERVO_ON, 0, 0);
+                            try {
+                                mService.send(msg);
+                            } catch (RemoteException e) {
+                                e.printStackTrace();
+                            }
                             flagAcelerometro = true;
                             acelerometro.setText("\n" +"Acelerometro");
                         }else {
                             acelerometro.setBackgroundColor(Color.TRANSPARENT);
-                            mConnectedThread.write("2");    // Send "1" via Bluetooth
-                            //showToast("Cuna en reposo");
+                            if (!mBound) return;
+                            Message msg = Message.obtain(null, ServicioBT.GET_SERVO_OFF, 0, 0);
+                            try {
+                                mService.send(msg);
+                            } catch (RemoteException e) {
+                                e.printStackTrace();
+                            }
                             flagAcelerometro = false;
                             acelerometro.setText(" ");
                         }
@@ -212,23 +233,28 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                     break;
 
                 case Sensor.TYPE_PROXIMITY :
-                    //txt += "proximity\n";
-                    //txt += event.values[0] + "\n";
-
-                    //proximity.setText(txt);
-
                     // Si detecta 0 lo represento
                     if( event.values[0] == 0 )
                     {
                         proximity.setBackgroundColor(Color.parseColor("#7C2F8E"));
-                        mConnectedThread.write("3");    // Send "1" via Bluetooth
-                       // showToast("EncenderLuz");
+                        if (!mBound) return;
+                        Message msg = Message.obtain(null, ServicioBT.GET_LED_ON, 0, 0);
+                        try {
+                            mService.send(msg);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
                        proximity.setText(" Proximidad ");
                     }
                     else {
                         proximity.setBackgroundColor(Color.parseColor("#FAFAFA"));
-                        mConnectedThread.write("4");    // Send "1" via Bluetooth
-                      //  showToast("ApagarLuz");
+                        if (!mBound) return;
+                        Message msg = Message.obtain(null, ServicioBT.GET_LED_OFF, 0, 0);
+                        try {
+                            mService.send(msg);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
                         proximity.setText(" ");
                     }
                     break;
@@ -238,12 +264,24 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                     if( event.values[0] < 21) { //Celular de Erik, pueden cambiar
                         if(!flagLuz) {
                             luminosidad.setBackgroundColor(Color.parseColor("#256F3E"));
-                            //mConnectedThread.write("5");    // Send "1" via Bluetooth
+                            if (!mBound) return;
+                            Message msg = Message.obtain(null, ServicioBT.GET_MUSICA_ON, 0, 0);
+                            try {
+                                mService.send(msg);
+                            } catch (RemoteException e) {
+                                e.printStackTrace();
+                            }
                             flagLuz=true;
                             luminosidad.setText("Luz ambiente");
                         }else{
                             luminosidad.setBackgroundColor(Color.TRANSPARENT);
-                            //mConnectedThread.write("5");    // Send "1" via Bluetooth
+                            if (!mBound) return;
+                            Message msg = Message.obtain(null, ServicioBT.GET_MUSICA_OFF, 0, 0);
+                            try {
+                                mService.send(msg);
+                            } catch (RemoteException e) {
+                                e.printStackTrace();
+                            }
                             flagLuz=false;
                             luminosidad.setText(" ");
                         }
@@ -291,6 +329,11 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+
+    }
+    @Override
     protected void onDestroy()
     {
         Parar_Sensores();
@@ -319,219 +362,83 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     protected void onResume()
     {
         super.onResume();
-        //servicio = new Handler((Handler.Callback) new HandlerThread("hiloServicio"));
-        servicio = new Handler();
-        //Obtengo el parametro, aplicando un Bundle, que me indica la Mac Adress del HC05
-        //Intent intent=getIntent();
-        //Bundle extras=intent.getExtras();
-
-        //address= extras.getString("Direccion_Bluethoot");
-
-        //BluetoothDevice device = btAdapter.getRemoteDevice(address);
-
-        //se realiza la conexion del Bluethoot crea y se conectandose a atraves de un socket
-      /*  try
-        {
-            btSocket = createBluetoothSocket(device);
+        Log.i("Main","entre al onResume");
+        if (!mBound) return;
+        Message msg = Message.obtain(null, ServicioBT.GET_INFO, 0, 0);
+        try {
+            mService.send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
         }
-        catch (IOException e)
-        {
-            showToast( "La creacción del Socket fallo");
-        }
-        // Establish the Bluetooth socket connection.
-        try
-        {
-            btSocket.connect();
-        }
-        catch (IOException e)
-        {
-            try
-            {
-                btSocket.close();
-            }
-            catch (IOException e2)
-            {
-                //insert code to deal with this
-            }
-        }
-
-        //Una establecida la conexion con el Hc05 se crea el hilo secundario, el cual va a recibir
-        // los datos de Arduino atraves del bluethoot
-        mConnectedThread = new ConnectedThread(btSocket);
-        mConnectedThread.start();
-
-        //I send a character when resuming.beginning transmission to check device is connected
-        //If it is not an exception will be thrown in the write method and finish() will be called
-        mConnectedThread.write("#");
-*/
         Ini_Sensores();
-    }
-
-    //Metodo que crea el socket bluethoot
-    private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
-
-        return  device.createRfcommSocketToServiceRecord(BTMODULEUUID);
-    }
-
-    //Handler que sirve que permite mostrar datos en el Layout al hilo secundario
-    private Handler Handler_Msg_Hilo_Principal ()
-    {
-        return new Handler() {
-            public void handleMessage(android.os.Message msg)
-            {
-                //si se recibio un msj del hilo secundario
-                if (msg.what == handlerState)
-                {
-                    //voy concatenando el msj
-                    String dataInPrint;
-                    String estMicro = "";
-                    String estServo = "";
-                    String estLed="";
-                    int estMojado=-1;
-                    String readMessage = (String) msg.obj;
-                    recDataString.append(readMessage);
-
-                    int endOfLineIndex = recDataString.indexOf("\n");
-
-                    //cuando recibo toda una linea la muestro en el layout
-                    if (endOfLineIndex > 0)
-                    {
-
-                        int servo = recDataString.indexOf("S");
-                        if(servo>0){
-                            estServo = Character.toString(recDataString.charAt(servo+1));
-                        }
-                        int micro = recDataString.indexOf("M");
-                        if(micro>0) {
-                            estMicro = Character.toString(recDataString.charAt(micro + 1));
-                        }
-                        int led = recDataString.indexOf("L");
-                        if(led>0) {
-                            estLed = Character.toString(recDataString.charAt(led+1));
-                        }
-
-                        int mojado = recDataString.indexOf("H");
-                        if(mojado>0) {
-                           estMojado = Character.getNumericValue(recDataString.charAt(mojado + 1));
-                        }
-                       // int temperatura = recDataString.indexOf("T");
-                     //   Integer estTemperatura = Integer.parseInt(recDataString.substring(temperatura+1,temperatura+3));
-
-                        if(estServo.equals("E")){
-                                txt_servo.setText("Meciendo");
-                                txt_servo.setBackgroundResource(R.drawable.encendido);
-                                flagAcelerometro = true;
-
-                            }
-                            else {
-                                txt_servo.setText("En Reposo");
-                                txt_servo.setBackgroundResource(R.drawable.apagado);
-                                flagAcelerometro = false;
-                        }
-
-                        if(estLed.equals("E")){
-                            txt_led.setText("Luz Encendida");
-                            txt_led.setBackgroundResource(R.drawable.encendido);
-
-                        }
-                        else {
-                            txt_led.setText("Luz Apagada");
-                            txt_led.setBackgroundResource(R.drawable.apagado);
-
-                        }
-                        if(estMicro.equals("E")){
-                            txt_micro.setText("Bebe \n Llorando");
-                            txt_micro.setBackgroundResource(R.drawable.encendido);
-
-                        }
-                        else {
-                            txt_micro.setText("Silencio");
-                            txt_micro.setBackgroundResource(R.drawable.apagado);
-
-                        }
-                        if((estMojado ) > 0){
-                            showToast("Cuna mojada");
-                        }
-                    }
-                    //recDataString.delete(0, recDataString.length());
-                    recDataString = new StringBuilder();
-                }
-            }
-        };
-    }
-
-
-    //******************************************** Hilo secundario del Activity**************************************
-    //*************************************** recibe los datos enviados por el HC05**********************************
-
-    private class ConnectedThread extends Thread
-    {
-        private final InputStream mmInStream;
-        private final OutputStream mmOutStream;
-
-        //Constructor de la clase del hilo secundario
-        public ConnectedThread(BluetoothSocket socket)// cambiar aqui
-        {
-            InputStream tmpIn = null;
-            OutputStream tmpOut = null;
-
-            try
-            {
-                //Create I/O streams for connection
-                tmpIn = socket.getInputStream();
-                tmpOut = socket.getOutputStream();
-            } catch (IOException e) { }
-
-            mmInStream = tmpIn;
-            mmOutStream = tmpOut;
-        }
-
-        //metodo run del hilo, que va a entrar en una espera activa para recibir los msjs del HC05
-        public void run()
-        {
-            byte[] buffer = new byte[256];
-            int bytes;
-
-            //el hilo secundario se queda esperando mensajes del HC05
-            while (true)
-            {
-                try
-                {
-                    //se leen los datos del Bluethoot
-                    bytes = mmInStream.read(buffer);
-                    String readMessage = new String(buffer, 0, bytes);
-                    Log.i("Mensaje BLuethoot",readMessage);
-                    //se muestran en el layout de la activity, utilizando el handler del hilo
-                    // principal antes mencionado
-                    bluetoothIn.obtainMessage(handlerState, bytes, -1, readMessage).sendToTarget();
-                } catch (IOException e) {
-                    break;
-                }
-            }
-        }
-
-        //write method
-        public void write(String input) {
-            byte[] msgBuffer = input.getBytes();           //converts entered String into bytes
-            try {
-                mmOutStream.write(msgBuffer);                //write bytes over BT connection via outstream
-            } catch (IOException e) {
-                //if you cannot write, close the application
-                showToast("La conexion fallo");
-                finish();
-
-            }
-        }
     }
 
     private void showToast(String message) {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
 
-    /**Prueba MQueue**/
-    public class conectionService extends Thread {
+    private Handler handler = new Handler() {
+        public void handleMessage(Message message) {
+            Bundle data = message.getData();
+            String text;
+            int servo_encendido;
+            int servo_apagado;
+            int led_encendido;
+            int led_apagado;
+            int micro_encendido;
+            int micro_apagado;
+            int humedad_encendido;
+            int humedad_apagado;
+            Log.i("MainActivity","Respuesta recibida");
+            Log.i("MainActivity", String.valueOf(message.arg1));
+            switch (message.arg1){
+                case ServicioBT.GET_RESPUESTA:
+                    text = data.getString(ServicioBT.RESULTPATH);
+                    servo_encendido = text.indexOf("SE");
+                    led_encendido = text.indexOf("LE");
+                    micro_encendido = text.indexOf("ME");
+                    humedad_encendido = text.indexOf("H1");
 
+                    if(servo_encendido >= 0){
+                        showToast("Meciendo Cuna");
+                        txt_servo.setText("Meciendo");
+                        txt_servo.setBackgroundResource(R.drawable.encendido);
+                    }else{
+                        showToast("Cuna en reposo");
+                        txt_servo.setText("En Reposo");
+                        txt_servo.setBackgroundResource(R.drawable.apagado);
+                    }
+                    if(led_encendido >= 0){
+                        txt_led.setText("Luz encendida");
+                        txt_led.setBackgroundResource(R.drawable.encendido);
+                    }else{
+                        txt_led.setText("Luz Apagada");
+                        txt_led.setBackgroundResource(R.drawable.apagado);
+                    }
+                    if(micro_encendido >= 0){
+                        txt_micro.setText("Musica encendida");
+                        txt_micro.setBackgroundResource(R.drawable.encendido);
+                    }else{
+                        txt_micro.setText("Musica Apagada");
+                        txt_micro.setBackgroundResource(R.drawable.apagado);
+                    }
+                    if(humedad_encendido >= 0){
+                        Toast.makeText(CRIArdMainActivity.this, text, Toast.LENGTH_LONG).show();
+                    }
+                    break;
+            }
+        }
+    };
 
-    }
+    private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            mService = new Messenger(service);
+            mBound = true;
+        }
 
+        public void onServiceDisconnected(ComponentName className) {
+            mService = null;
+            mBound = false;
+        }
+    };
 }
