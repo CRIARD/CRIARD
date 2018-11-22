@@ -1,28 +1,40 @@
+#include <DHT.h>
+#include <Servo.h>
 #include <SoftwareSerial.h>
-#include <ArduinoJson.h>
-//#include "melodias.h"
+#include <SPI.h>
+#include <DHT.h>
+#include "melodias.h"
+
+//Pines utilizados:
+#define PinServo      8   //Pin donde está conectado el servo 
+#define pinMicro      A3  //Pin donde está conectado el servo 
+#define PinLDR        A1  // Pin donde esta conectado el LDR
+#define PinLED        6   // Pin donde esta conectado el LED (PWM)
+#define PinLED2        13   // Pin donde esta conectado el LED que se activa con sensor proximidad desde celular
+#define PinBuzzer     12  // Pin donde esta conectado el buzzer
+#define sensorMojado  9   //variables de humedad
+#define DHTPIN        2   // Definimos el pin digital donde se conecta el sensor
+
+//Banderas de sensores entre Android y Arduino
 int flagNotificacion = 0;
 int flagNotificacionMojado = 0;
 int flagNotificacionLuz=0;
 int flagNotificacionInicial = 0;
-//Fuente https://programarfacil.com/tutoriales/fragmentos/servomotor-con-arduino/
-#include <Servo.h>
-#define ESPERA_LECTURAS 2000 // tiempo en milisegundos entre lecturas de la intensidad de la luz
+int flagBuzzer;
+
+
 //Variables del Servo
-#define PinServo      8   //Pin donde está conectado el servo 
 #define ServoCerrado  90  // posición inicial 
 #define ServoQUIETO  90   // posición inicial 
 #define ServoAbierto  180 // posición de 0 grados
 int tiempoInicialAmaque = 0;
 int tiempoAmaque = 0;
 int prendoCuna = 0;
-int amacar = 0;   //flag para amacar izquierda o derecha
+int hamacar = 0;   //flag para hamacar izquierda o derecha
 int posicionServo = ServoQUIETO; //Va a contener la ubicación del servo
 Servo servoMotor;
 
 //Variables del micrófono
-#define pinMicro      A3   //Pin donde está conectado el servo 
-//#define umbralRuido   20  //Valor que lee el microfono en silencio
 #define standby 20000
 double valorLlanto = 0;      //variable to store the value coming from the sensor
 int tiempoUltimoLlanto = 0;
@@ -35,24 +47,12 @@ double ruidoPromedio = 0;
 double umbralRuidol= 80;
 
 //Variables LDR
-#define PinLDR A1 // Pin donde esta conectado el LDR
-#define PinLED 6 // Pin donde esta conectado el LED (PWM)
+#define ESPERA_LECTURAS 2000 // tiempo en milisegundos entre lecturas de la intensidad de la luz
 long cronometro_lecturas=0;
 long tiempo_transcurrido;
 unsigned int luminosidad;
-float coeficiente_porcentaje=100.0/1023.0; // El valor de la entrada analógica va de 0 a 1023 y se quiere convertir a porcentaje que va de cero a 100
+double coeficiente_porcentaje=255.0/1023.0; //100.0/1023.0; // El valor de la entrada analógica va de 0 a 1023 y se quiere convertir a porcentaje que va de cero a 100
 
-#include <SoftwareSerial.h>
-#include <SPI.h>
-#include <Ethernet.h>
- // arduino Rx (pin 2) ---- ESP8266 Tx
- // arduino Tx (pin 3) ---- ESP8266 Rx
-
-//Variables del led
-const int ledPIN = 12;
-
-//variables del buzzer
-#define PinBuzzer 4 // Pin donde esta conectado el buzzer
 //Variables de mensajes Bluetooth
 #define encenderCunaBT  '1'
 #define apagarCunaBT    '2'
@@ -76,26 +76,23 @@ String MICROAPAGADO    = "MA";
 String COLCHONMOJADO   = "H1";
 String COLCHONSECO     = "H0";
 String MENSAJE = "#";
-int tiempoInicioWIFI = 0;
-int tiempoWIFI = 0;
-#define DEBUG true
-int conexionID = 0;
-String peticion = "";
-bool estadoConexion = false;
+int tiempoInicioConex = 0;
+
+
 //Al utilizar la biblioteca SoftwareSerial los pines RX y TX para la transmicion serie de Bluethoot se pueden cambiar mapear a otros pines.
 //Sino se utiliza esta bibioteca esto no se puede realizar y se debera conectar al pin 0 y 1, conexion Serie no pudiendo imprmir por el monitor serie
 //Al estar estos ocupados.
 SoftwareSerial BTserial(10,11); // RX | TX
 
-//variables de humedad
-const int sensorMojado = 9;
 
 char c = ' ';
 int flag = 1;
-//HUmedad y temperatura ambiental
-#include <DHT12.h>
-#include <Wire.h>     //The DHT12 uses I2C comunication.
-DHT12 dht12;          //Preset scale CELSIUS and ID 0x5c.
+//Humedad y temperatura ambiental
+#define DHTTYPE DHT11 // Dependiendo del tipo de sensor
+DHT dht(DHTPIN, DHTTYPE);// Inicializamos el sensor DHT11
+
+
+
 void setup()
 {
     //Se configura la velocidad del puerto serie para poder imprimir en el puerto Serie
@@ -108,20 +105,23 @@ void setup()
 
     servoMotor.attach(PinServo); // el servo trabajará desde el pin definido como PinServo
     servoMotor.write(ServoCerrado);   // Desplazamos a la posición 0
-  
+    flagBuzzer=0;
     pinMode(PinLDR,INPUT); //Defino el tipo de pin para el LDR (Entrada)
     pinMode(PinLED,OUTPUT); //Defino el tipo de pin para el LED (Salida)
+     pinMode(PinLED2,OUTPUT); //Defino el tipo de pin para el LED (Salida)
+    pinMode(sensorMojado, INPUT);  //definir pin como entrada
+    dht.begin();// Comenzamos el sensor DHT
+    analogWrite(PinLED2,255); 
     
-    tiempoInicioWIFI = millis();
+    iniciarMelodia(PinBuzzer);
+    tiempoInicioConex = millis();
     tiempoInicialAmaque = millis();
     tiempoSilencio = millis();
     tiempoUltimoLlanto = millis();
     tiempoInicioProm = millis();
     tiempoFinProm = 0; 
 
-    pinMode(sensorMojado, INPUT);  //definir pin como entrada
-  //Wire para sensor de humedad
-  Wire.begin();
+    
 }
  
 void loop()
@@ -137,12 +137,9 @@ void loop()
       }          
     }
     escucharLlanto();
-    amacarCuna(); 
+    hamacarCuna(); 
     detectarLuz();
     detectarMojado();
-    //String ambiente = "0T"  + String(dht12.readTemperature()) + "H"  + String(dht12.readHumidity());
-    //Serial.println(ambiente);
-    //sensoresAmbientales();
 }
 /**Funcion que utiliza el BT para determinar la accion a realizar**/
 
@@ -170,9 +167,7 @@ void informarEstadoSensor(){
     }else{
       MENSAJE += COLCHONSECO;
       }
-    
-    //String ambiente = "0T" + String(dht12.readTemperature()) + "H" + String(dht12.readHumidity());
-    //enviarEstadoActualAANDROID(ambiente); 
+    MENSAJE +=  "T" + String(dht.readTemperature()) + "H" + String(dht.readHumidity());
     enviarEstadoActualAANDROID(MENSAJE); 
     BTserial.write('\n');
     Serial.println(MENSAJE);
@@ -192,28 +187,31 @@ void analizarDato(char c)
       Serial.println("Solicitud recibida: " + c);
         tiempoInicialAmaque = millis();
         ESTADOSERVO = "ON"; 
-        //flagNotificacion = 0;
         break;        
       case apagarCunaBT:
       Serial.println("Solicitud recibida: " + c);
         ESTADOSERVO = "OFF";
-        //flagNotificacion = 1;
         break;
       case encenderLEDBT:
       Serial.println("Solicitud recibida: " + c);
-        analogWrite(PinLED,255); 
+        analogWrite(PinLED2,0); 
         break;
       case apagarLEDBT:
       Serial.println("Solicitud recibida: " + c);
-        analogWrite(PinLED,0); 
+        analogWrite(PinLED2,255); 
         break;
       case encenderMusicBT:
       Serial.println("Solicitud recibida: " + c);
-        //sonarMelody1();
+        
+        if(flagBuzzer==0){
+         sonarMelody4();
+          sonarMelody4();
+          }
+        flagBuzzer=1;
         break;
       case apagarMusicBT:
       Serial.println("Solicitud recibida: " + c);
-        //apagarMelody();
+        apagarMelody();
         break;
       default:
         Serial.print(c);
@@ -223,33 +221,38 @@ void analizarDato(char c)
 
 /**DECLARACION DE FUNCIONES**/  
 void detectarLuz(){
+  int valor; // Variable para cálculos.
    tiempo_transcurrido=millis()-cronometro_lecturas;    
     if(tiempo_transcurrido>ESPERA_LECTURAS){// espera no bloqueante
-      
         cronometro_lecturas=millis();
         luminosidad=analogRead(PinLDR);
     }
-    double swi = 255-(((luminosidad*coeficiente_porcentaje)*255)/100);
-    if(swi > 110){
+    //*************************Comentado por Vale***********************//
+    //le pasamos el valor de luminosidad al ldr
+    double swi= luminosidad*coeficiente_porcentaje;
+    
+    if(swi < 130.0){
       ESTADOLED = "OFF";
       if(flagNotificacionLuz==1){
         informarEstadoSensor(); 
         flagNotificacionLuz=0;
             }
-      analogWrite(PinLED,255);  
+         analogWrite(PinLED,255);
     }else{
-      ESTADOLED = "ON"; 
-      
+      ESTADOLED = "ON";
        if(flagNotificacionLuz==0){
         informarEstadoSensor(); 
         flagNotificacionLuz=1;
             }
             
       analogWrite(PinLED,swi);  
+      if(swi>225.0){
+        analogWrite(PinLED,0);  
+      }
     }
 }
   
-void amacarCuna(){
+void hamacarCuna(){
   if(ESTADOSERVO == "ON"){
     if(flagNotificacion == 0 ){
       informarEstadoSensor(); 
@@ -257,17 +260,17 @@ void amacarCuna(){
     } 
     tiempoAmaque = millis()-tiempoInicialAmaque;
     if(tiempoAmaque > 20){
-    if(amacar==0){
+    if(hamacar==0){
       posicionServo ++;
       servoMotor.write(posicionServo); 
       if(posicionServo == ServoAbierto){
-        amacar=1;
+        hamacar=1;
       }
     }else{
       posicionServo --;
       servoMotor.write(posicionServo);
       if(posicionServo == ServoCerrado){
-        amacar=0;
+        hamacar=0;
       }
     }
     tiempoInicialAmaque=millis();
