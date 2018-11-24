@@ -348,6 +348,51 @@ void sonarMelody5(){
     delayMicroseconds(pause);
   }
 }
+
+
+int length = 15; // the number of notes6
+
+//twinkle twinkle little star
+char notes6[] = "ccggaag ffeeddc ggffeed ggffeed ccggaag ffeeddc "; // a space represents a rest
+int beats6[] = { 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 4 };
+int tempo6 = 300;
+
+
+void playTono(int tone, int duration) {
+  for (long i = 0; i < duration * 1000L; i += tone * 2) {
+    digitalWrite(speakerOut, HIGH);
+    delayMicroseconds(tone);
+    digitalWrite(speakerOut, LOW);
+    delayMicroseconds(tone);
+  }
+}
+
+void playNota(char note, int duration) {
+  char names[] = { 'c', 'd', 'e', 'f', 'g', 'a', 'b', 'C' };
+  int tones[] = { 1915, 1700, 1519, 1432, 1275, 1136, 1014, 956 };
+  
+  // play the tone corresponding to the note name
+  for (int i = 0; i < 8; i++) {
+    if (names[i] == note) {
+      playTono(tones[i], duration);
+    }
+  }
+}
+
+
+
+void sonarMelody6(){
+    for (int i = 0; i < length; i++) {
+    if (notes6[i] == ' ') {
+      delay(beats6[i] * tempo6); // rest
+    } else {
+      playNota(notes6[i], beats6[i] * tempo6);
+    }
+    
+    // pause between notes6
+    delay(tempo6 / 2); 
+  }
+}
 void apagarMelody(){
   digitalWrite(speakerOut,LOW);
 }

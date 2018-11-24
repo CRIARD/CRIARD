@@ -123,7 +123,6 @@ void setup()
     tiempoUltimoLlanto = millis();
     tiempoInicioProm = millis();
     tiempoFinProm = 0; 
-
     
 }
  
@@ -220,8 +219,7 @@ void analizarDato(char c)
       Serial.println("Solicitud recibida: " + c);
         
         if(flagBuzzer==0){
-         sonarMelody4();
-          sonarMelody4();
+         sonarMelody6();
           }
         flagBuzzer=1;
         break;
