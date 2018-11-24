@@ -41,6 +41,8 @@ int tiempoUltimoLlanto = 0;
 int tiempoSilencio = 0;
 int tiempoInicioProm = 0; // para calcular el ruido ambiente
 int tiempoFinProm = 0;
+int tiempoInfoTempIni = 0;
+int tiempoInfoTemp = 0;
 double muestras = 0;
 double sumaRuido = 0;
 double ruidoPromedio = 0;  
@@ -115,6 +117,7 @@ void setup()
     
     iniciarMelodia(PinBuzzer);
     tiempoInicioConex = millis();
+    tiempoInfoTempIni = millis();
     tiempoInicialAmaque = millis();
     tiempoSilencio = millis();
     tiempoUltimoLlanto = millis();
@@ -142,6 +145,7 @@ void loop()
     hamacarCuna(); 
     detectarLuz();
     detectarMojado();
+    informarTemperatura();
 }
 /**Funcion que utiliza el BT para determinar la accion a realizar**/
 
@@ -169,8 +173,7 @@ void informarEstadoSensor(){
     }else{
       MENSAJE += COLCHONSECO;
       }
-    //String temp = String(dht.readTemperature());
-    //MENSAJE +=  "T" + temp[0] + temp[1];
+    
     enviarEstadoActualAANDROID(MENSAJE); 
     BTserial.write('\n');
     Serial.println(MENSAJE);
@@ -178,7 +181,17 @@ void informarEstadoSensor(){
     BTserial.flush();
   }
 
-
+void informarTemperatura(){
+  tiempoInfoTemp = millis() - tiempoInfoTempIni;
+  if(tiempoInfoTemp > 5000){
+    MENSAJE +=  "T" + String(dht.readTemperature()) + "H" + String(dht.readHumidity());  
+    enviarEstadoActualAANDROID(MENSAJE); 
+    BTserial.write('\n');
+    MENSAJE = "#";
+    BTserial.flush();
+    tiempoInfoTempIni = millis();
+  }
+}
 void enviarEstadoActualAANDROID(String msj){
     BTserial.print(msj);     
 }
