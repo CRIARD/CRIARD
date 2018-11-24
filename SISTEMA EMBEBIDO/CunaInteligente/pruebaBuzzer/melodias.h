@@ -276,24 +276,24 @@ void iniciarMelodia(int speakerOut1){
 
 
 
-void playTone() {
+void playTone() { 
 
 long elapsed_time = 0;
-if (toneM > 0) {
-
-while (elapsed_time < duration) {
-digitalWrite(speakerOut,HIGH);
-delayMicroseconds(toneM / 2);
-digitalWrite(speakerOut, LOW);
-delayMicroseconds(toneM / 2);
-elapsed_time += (toneM);
-
-       }
-}else {
-  for (int j = 0; j < rest_count; j++) {
-   delayMicroseconds(duration);
-  }
-}
+    if (toneM > 0) {
+    
+    while (elapsed_time < duration) {
+    digitalWrite(speakerOut,HIGH);
+    delayMicroseconds(toneM / 2);
+    digitalWrite(speakerOut, LOW);
+    delayMicroseconds(toneM / 2);
+    elapsed_time += (toneM);
+    
+           }
+    }else {
+      for (int j = 0; j < rest_count; j++) {
+       delayMicroseconds(duration);
+      }
+    }
 
 }
 
@@ -358,7 +358,7 @@ void apagarMelody(){
 }
 
 
-vacío  sonarMelody6( int tono, int duración) {
+vacío  sonarMelody6( int tono, int duracion) {
   para ( largo i = 0 ; i <duración * 1000L ; i + = tono * 2 ) {
     digitalWrite (speakerPin, HIGH);
     delayMicroseconds (tone);
@@ -367,30 +367,34 @@ vacío  sonarMelody6( int tono, int duración) {
   }
 }
 
-void  playNote ( nota char , duración int ) {
-  carbonilla nombres [] = { ' c ' , ' d ' , ' e ' , ' f ' , ' g ' , ' un ' , ' b ' , ' C ' };
-  tonos int [] = { 1915 , 1700 , 1519 , 1432 , 1275 , 1136 , 1014 , 956 };
+//*********************Funciones Play note***************************//
+/*
+
+void playNote(char note, int duration) {
+  char names[] = { 'c', 'd', 'e', 'f', 'g', 'a', 'b', 'C' };
+  int tones[] = { 1915, 1700, 1519, 1432, 1275, 1136, 1014, 956 };
   
-  // toca el tono correspondiente al nombre de la nota
-  para ( int i = 0 ; i < 8 ; i ++) {
-    si (nombres [i] == nota) {
-      playTone (tonos [i], duración);
+  // play the tone corresponding to the note name
+  for (int i = 0; i < 8; i++) {
+    if (names[i] == note) {
+      playTone(tones[i], duration);
     }
   }
 }
 
- configuración vacía () {
-  pinMode (speakerPin, SALIDA);
+void setup() {
+  pinMode(speakerPin, OUTPUT);
 }
 
- bucle de vacío () {
-  para ( int i = 0 ; i <longitud; i ++) {
-    si (notas [i] == '  ' ) {
-      delay (tiempos [i] * tempo); // descansar
+void loop() {
+  for (int i = 0; i < length; i++) {
+    if (notes[i] == ' ') {
+      delay(beats[i] * tempo); // rest
     } else {
-      playNote (notas [i], tiempos [i] * tempo);
+      playNote(notes[i], beats[i] * tempo);
     }
     
-    // pausa entre notas
-    retraso (tempo / 2 );
+    // pause between notes
+    delay(tempo / 2); 
   }
+*/
