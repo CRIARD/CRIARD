@@ -1,5 +1,6 @@
 package app.criard.criardapp;
 
+import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -7,8 +8,10 @@ import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
@@ -56,12 +59,9 @@ public class ServicioBT extends Service {
     private class ServiceHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
-
-            Bundle bundle = new Bundle();
-            Message message = Message.obtain();
             switch (msg.what){
                 case GET_INFO:
-                    Log.i("Servicio","Mensaje Recibido");
+                    Log.i("Notificacion", "Solicitud recibida");
                     mConnectedThread.write("#");
                     break;
                 case GET_SERVO_ON:
@@ -80,6 +80,7 @@ public class ServicioBT extends Service {
                     mConnectedThread.write("5");
                     break;
                 case GET_MUSICA_OFF:
+                    mConnectedThread.write("6");
                     break;
                 default:
                     super.handleMessage(msg);
@@ -90,7 +91,7 @@ public class ServicioBT extends Service {
     @Override
     //Metodo que se llama cuando se crea el servicio con startservice
     public void onCreate() {
-        //obtengo el adaptador del bluethoot
+
         btAdapter = BluetoothAdapter.getDefaultAdapter();
         Toast.makeText(this, "Servicio creado", Toast.LENGTH_SHORT).show();
         BluetoothDevice device = btAdapter.getRemoteDevice(address);
@@ -117,6 +118,7 @@ public class ServicioBT extends Service {
         // los datos de Arduino atraves del bluethoot
         mConnectedThread = new ServicioBT.ConnectedThread(btSocket);
         mConnectedThread.start();
+
     }
 
     //Metodo que crea el socket bluethoot
@@ -137,6 +139,7 @@ public class ServicioBT extends Service {
     public void onDestroy() {
         Toast.makeText(this, "Servicio detenido", Toast.LENGTH_SHORT).show();
     }
+
 
     @Nullable
     @Override
@@ -223,12 +226,13 @@ public class ServicioBT extends Service {
 
                     int endOfLineIndex = recDataString.indexOf("\n");
                     Log.i("Arduino","Mensaje recibido de arduino");
+                    Log.i("Arduino",recDataString.toString());
                     //cuando recibo toda una linea la muestro en el layout
 
                     if (endOfLineIndex > 0) {
 
-                        int estadoCuna = recDataString.indexOf("H1");
-                        int estandoLLando = recDataString.indexOf("ME");
+                        int estadoCuna = recDataString.indexOf("U");
+                        int estandoLLando = recDataString.indexOf("T");
                         if(estadoCuna >= 0){
                             new Thread(new Runnable() {
 
@@ -313,4 +317,6 @@ public class ServicioBT extends Service {
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
+
+
 }

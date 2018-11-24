@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">CRIArdApp</string>
+    <string name="app_name">CRIArd</string>
 
     <string name="title_home">Hogar</string>
     <string name="title_cuna">Cuna Inteligente</string>
@@ -24,5 +24,6 @@
     <string name="text_list_devices">Lista de dispositivos</string>
 
     <string name="text_pair">Emparejar</string>
+    <string name="title_activity_informe_temperatura">Informe_temperatura</string>
 
 </resources>

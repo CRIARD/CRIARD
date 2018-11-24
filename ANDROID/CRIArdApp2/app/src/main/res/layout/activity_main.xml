@@ -9,14 +9,14 @@
     <ImageView
         android:id="@+id/imageView2"
         android:layout_width="382dp"
-        android:layout_height="288dp"
+        android:layout_height="266dp"
         app:srcCompat="@mipmap/criard"
         tools:layout_editor_absoluteX="3dp"
         tools:layout_editor_absoluteY="0dp" />
 
     <ImageView
         android:id="@+id/loadingView"
-        android:layout_width="204dp"
+        android:layout_width="184dp"
         android:layout_height="219dp"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
@@ -26,9 +26,9 @@
         android:id="@+id/pbar"
         style="?android:attr/progressBarStyleHorizontal"
         android:background="@color/colorPrimary"
-        android:backgroundTint="@color/colorPrimaryDark"
+        android:progressTint="@color/colorPrimaryDark"
         android:layout_width="match_parent"
-        android:layout_height="27dp"
+        android:layout_height="50dp"
         android:max="100"
         android:progress="1"
         android:indeterminate="false"

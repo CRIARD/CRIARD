@@ -1,12 +1,17 @@
 package app.criard.criardapp;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -22,11 +27,13 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.design.widget.BottomNavigationView;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.MenuItem;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 
 import java.sql.Time;
@@ -42,6 +49,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,28 +65,13 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     private TextView txt_led;
     private TextView txt_micro;
     private Intent intent;
-    private Button btn_encender;
-    private Button btn_apagar;
-    private Button btn_musicon;
-    private Button btn_musicoff;
-    private Message messagein;
+    private ToggleButton btn_cuna;
+    private ToggleButton btn_musica;
     Messenger mService = null;
     boolean mBound;
-    int count = 0;
     private boolean flagAcelerometro;
     private boolean flagLuz = false;
-    final int handlerState = 0; //used to identify handler message
-
-    private BluetoothAdapter btAdapter = null;
-    private BluetoothSocket btSocket = null;
-    private StringBuilder recDataString = new StringBuilder();
-    // SPP UUID service  - Funciona en la mayoria de los dispositivos
-    private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-
-    // String for MAC address del Hc05
-    private static String address = null;
-    //DecimalFormat dosdecimales = new DecimalFormat("###.###");
-
+    private int contador = 0;
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
 
@@ -86,10 +79,14 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.navigation_home:
+                    Intent intent = new Intent(CRIArdMainActivity.this,CRIArdMainActivity.class);
+                    startActivity(intent);
+                    finish();
                     return true;
                 case R.id.navigation_cuna:
-                    return true;
-                case R.id.navigation_config:
+                    Intent intent1 = new Intent(CRIArdMainActivity.this,CRIArdMainActivity.class);
+                    startActivity(intent1);
+                    finish();
                     return true;
             }
             return false;
@@ -108,27 +105,21 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         acelerometro = (TextView) findViewById(R.id.acelerometro);
         proximity    = (TextView) findViewById(R.id.proximity);
         luminosidad  = (TextView) findViewById(R.id.luminosidad);
-        btn_apagar = (Button) findViewById(R.id.btn_apagar);
-        btn_encender = (Button) findViewById(R.id.btn_encender);
-        btn_musicon = (Button) findViewById(R.id.btn_microon);
-        btn_musicoff = (Button) findViewById(R.id.btn_microoff);
+
+        btn_cuna = (ToggleButton) findViewById(R.id.cuna);
+        btn_musica = (ToggleButton) findViewById(R.id.musica);
         txt_led = (TextView) findViewById(R.id.txt_led);
-        txt_led.setText("Luz Apagada");
         txt_micro = (TextView) findViewById(R.id.txt_micro);
-        txt_micro.setText("Silencio");
         txt_servo = (TextView) findViewById(R.id.txt_servo);
-        txt_servo.setText("En Reposo");
+
+        btn_cuna.setOnCheckedChangeListener(btnAccionCuna);
+        btn_musica.setOnCheckedChangeListener(btnAccionMusica);
         //obtengo el adaptador del bluethoot
-        //btAdapter = BluetoothAdapter.getDefaultAdapter();
-        //defino el Handler de comunicacion entre el hilo Principal  el secundario.
-        //El hilo secundario va a mostrar informacion al layout atraves utilizando indeirectamente a este handler
+        IntentFilter filter = new IntentFilter();
 
-
-        //defino los handlers para los botones Apagar y encender
-        btn_encender.setOnClickListener(btnEncenderListener);
-        btn_apagar.setOnClickListener(btnApagarListener);
-        btn_musicon.setOnClickListener(btnEncenderMusica);
-        btn_musicoff.setOnClickListener(btnApagarMusica);
+        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED); //Cambia el estado del Bluethoot (Acrtivado /Desactivado)
+        //se define (registra) el handler que captura los broadcast anterirmente mencionados.
+        registerReceiver(mReceiver, filter);
 
         Intent intent = new Intent(getApplicationContext(), ServicioBT.class);
         Messenger messenger = new Messenger(handler);
@@ -137,55 +128,47 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     }
 
     //Listener del boton encender que envia  msj para enceder Servo a Arduino atraves del Bluethoot
-    private View.OnClickListener btnEncenderListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            if (!mBound) return;
-            Message msg = Message.obtain(null, ServicioBT.GET_SERVO_ON, 0, 0);
-            try {
-                mService.send(msg);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-             }
-    };
+    private ToggleButton.OnCheckedChangeListener btnAccionCuna = new ToggleButton.OnCheckedChangeListener() {
 
-    //Listener del boton encender que envia  msj para Apagar Led a Arduino atraves del Bluethoot
-    private View.OnClickListener btnApagarListener = new View.OnClickListener() {
         @Override
-        public void onClick(View v) {
-            if (!mBound) return;
-            Message msg = Message.obtain(null, ServicioBT.GET_SERVO_OFF, 0, 0);
-            try {
-                mService.send(msg);
-            } catch (RemoteException e) {
-                e.printStackTrace();
+        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            if(isChecked){
+                Message msg = Message.obtain(null, ServicioBT.GET_SERVO_ON, 0, 0);
+                try {
+                    mService.send(msg);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }else{
+                Message msg = Message.obtain(null, ServicioBT.GET_SERVO_OFF, 0, 0);
+                try {
+                    mService.send(msg);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
             }
         }
     };
 
-    private View.OnClickListener btnEncenderMusica = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            if (!mBound) return;
-            Message msg = Message.obtain(null, ServicioBT.GET_MUSICA_ON, 0, 0);
-            try {
-                mService.send(msg);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-    };
+    //Listener del boton encender que envia  msj para enceder Servo a Arduino atraves del Bluethoot
+    private ToggleButton.OnCheckedChangeListener btnAccionMusica = new ToggleButton.OnCheckedChangeListener() {
 
-    private View.OnClickListener btnApagarMusica = new View.OnClickListener() {
         @Override
-        public void onClick(View v) {
-            if (!mBound) return;
-            Message msg = Message.obtain(null, ServicioBT.GET_MUSICA_OFF, 0, 0);
-            try {
-                mService.send(msg);
-            } catch (RemoteException e) {
-                e.printStackTrace();
+        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            if(isChecked){
+                Message msg = Message.obtain(null, ServicioBT.GET_MUSICA_ON, 0, 0);
+                try {
+                    mService.send(msg);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }else{
+                Message msg = Message.obtain(null, ServicioBT.GET_MUSICA_OFF, 0, 0);
+                try {
+                    mService.send(msg);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
             }
         }
     };
@@ -193,9 +176,6 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     @Override
     public void onSensorChanged(SensorEvent event) {
         String txt = "";
-
-        // Cada sensor puede lanzar un thread que pase por aqui
-        // Para asegurarnos ante los accesos simult�neos sincronizamos esto
 
         synchronized (this) {
             Log.d("sensor", event.sensor.getName());
@@ -297,6 +277,11 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         }
     }
 
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
     // Metodo para iniciar el acceso a los sensores
     protected void Ini_Sensores()
     {
@@ -308,15 +293,9 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     // Metodo para parar la escucha de los sensores
     private void Parar_Sensores()
     {
-
         mSensorManager.unregisterListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER));
         mSensorManager.unregisterListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY));
         mSensorManager.unregisterListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT));
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
     }
 
     @Override
@@ -337,7 +316,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     protected void onDestroy()
     {
         Parar_Sensores();
-
+        //unbindService(mConnection);
         super.onDestroy();
     }
 
@@ -353,7 +332,6 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     protected void onRestart()
     {
         Ini_Sensores();
-
         super.onRestart();
     }
 
@@ -362,15 +340,8 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     protected void onResume()
     {
         super.onResume();
-        Log.i("Main","entre al onResume");
-        if (!mBound) return;
-        Message msg = Message.obtain(null, ServicioBT.GET_INFO, 0, 0);
-        try {
-            mService.send(msg);
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
         Ini_Sensores();
+
     }
 
     private void showToast(String message) {
@@ -382,29 +353,23 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
             Bundle data = message.getData();
             String text;
             int servo_encendido;
-            int servo_apagado;
             int led_encendido;
-            int led_apagado;
             int micro_encendido;
-            int micro_apagado;
             int humedad_encendido;
-            int humedad_apagado;
             Log.i("MainActivity","Respuesta recibida");
             Log.i("MainActivity", String.valueOf(message.arg1));
             switch (message.arg1){
                 case ServicioBT.GET_RESPUESTA:
                     text = data.getString(ServicioBT.RESULTPATH);
-                    servo_encendido = text.indexOf("SE");
-                    led_encendido = text.indexOf("LE");
-                    micro_encendido = text.indexOf("ME");
-                    humedad_encendido = text.indexOf("H1");
+                    servo_encendido = text.indexOf("Q");
+                    led_encendido = text.indexOf("E");
+                    micro_encendido = text.indexOf("T");
+                    humedad_encendido = text.indexOf("U");
 
                     if(servo_encendido >= 0){
-                        showToast("Meciendo Cuna");
                         txt_servo.setText("Meciendo");
                         txt_servo.setBackgroundResource(R.drawable.encendido);
                     }else{
-                        showToast("Cuna en reposo");
                         txt_servo.setText("En Reposo");
                         txt_servo.setBackgroundResource(R.drawable.apagado);
                     }
@@ -416,10 +381,10 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                         txt_led.setBackgroundResource(R.drawable.apagado);
                     }
                     if(micro_encendido >= 0){
-                        txt_micro.setText("Musica encendida");
+                        txt_micro.setText("Llorando");
                         txt_micro.setBackgroundResource(R.drawable.encendido);
                     }else{
-                        txt_micro.setText("Musica Apagada");
+                        txt_micro.setText("Durmiendo");
                         txt_micro.setBackgroundResource(R.drawable.apagado);
                     }
                     if(humedad_encendido >= 0){
@@ -441,4 +406,65 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
             mBound = false;
         }
     };
+
+    private BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if(BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)){
+                int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,BluetoothAdapter.ERROR);
+                if(state == BluetoothAdapter.STATE_DISCONNECTED || state == BluetoothAdapter.STATE_OFF){
+                    Toast.makeText(CRIArdMainActivity.this,"Se ha perdido la conexion..",Toast.LENGTH_SHORT).show();
+                    unbindService(mConnection);
+                    AlertDialog alerta = createSimpleDialog();
+                    alerta.show();
+                }
+            }
+        }
+    };
+
+    public AlertDialog createSimpleDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("Error")
+                .setMessage("Se ha perdido la conexion.")
+                .setNegativeButton("Aceptar",
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Intent intent = new Intent(CRIArdMainActivity.this,ServicioBT.class);
+                                stopService(intent);
+                                finish();
+                            }
+                        });
+
+        return builder.create();
+    }
+
+    @Override
+    public void onBackPressed() {
+
+        if(contador == 0){
+            Toast.makeText(getApplicationContext(),"Presione nuevamente para salir",Toast.LENGTH_SHORT).show();
+            contador++;
+        }else{
+            Intent intent = new Intent(CRIArdMainActivity.this,ServicioBT.class);
+            stopService(intent);
+            finish();
+        }
+
+        new CountDownTimer(3000,1000){
+
+            @Override
+            public void onTick(long millisUntilFinished) {
+
+            }
+
+            @Override
+            public void onFinish() {
+                contador=0;
+            }
+        }.start();
+    }
+
 }

@@ -67,14 +67,14 @@ String ESTADOSERVO = "";
 String ESTADOMICRO = "";
 String ESTADOCOLCHON = "";
 
-String SERVOENCENDIDO  = "SE";
-String SERVOAPAGADO    = "SA";
-String LUZENCENDIDA    = "LE";
-String LUZAPAGADA      = "LA";
-String MICROENCENDIDO  = "ME";
-String MICROAPAGADO    = "MA";
-String COLCHONMOJADO   = "H1";
-String COLCHONSECO     = "H0";
+String SERVOENCENDIDO  = "Q";
+String SERVOAPAGADO    = "W";
+String LUZENCENDIDA    = "E";
+String LUZAPAGADA      = "R";
+String MICROENCENDIDO  = "T";
+String MICROAPAGADO    = "Y";
+String COLCHONMOJADO   = "U";
+String COLCHONSECO     = "I";
 String MENSAJE = "#";
 int tiempoInicioConex = 0;
 
@@ -132,7 +132,9 @@ void loop()
       //se los lee y se los muestra en el monitor serie
       c = BTserial.read();    
       analizarDato(c);   
+      Serial.println("Envio de informe");
       if(c == "#"){
+        Serial.println("Envio de informe");
         informarEstadoSensor();  
       }          
     }
@@ -167,7 +169,8 @@ void informarEstadoSensor(){
     }else{
       MENSAJE += COLCHONSECO;
       }
-    MENSAJE +=  "T" + String(dht.readTemperature()) + "H" + String(dht.readHumidity());
+    //String temp = String(dht.readTemperature());
+    //MENSAJE +=  "T" + temp[0] + temp[1];
     enviarEstadoActualAANDROID(MENSAJE); 
     BTserial.write('\n');
     Serial.println(MENSAJE);
