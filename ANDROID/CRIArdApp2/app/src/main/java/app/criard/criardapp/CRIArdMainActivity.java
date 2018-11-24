@@ -72,6 +72,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     private boolean flagAcelerometro;
     private boolean flagLuz = false;
     private int contador = 0;
+
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
 
@@ -79,14 +80,11 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.navigation_home:
-                    Intent intent = new Intent(CRIArdMainActivity.this,CRIArdMainActivity.class);
+                    Intent intent = new Intent(CRIArdMainActivity.this,Informe_temperatura.class);
                     startActivity(intent);
                     finish();
                     return true;
                 case R.id.navigation_cuna:
-                    Intent intent1 = new Intent(CRIArdMainActivity.this,CRIArdMainActivity.class);
-                    startActivity(intent1);
-                    finish();
                     return true;
             }
             return false;
@@ -100,6 +98,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
 
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        navigation.setSelectedItemId(R.id.navigation_cuna);
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
         acelerometro = (TextView) findViewById(R.id.acelerometro);
@@ -121,10 +120,6 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         //se define (registra) el handler que captura los broadcast anterirmente mencionados.
         registerReceiver(mReceiver, filter);
 
-        Intent intent = new Intent(getApplicationContext(), ServicioBT.class);
-        Messenger messenger = new Messenger(handler);
-        intent.putExtra("MESSENGER", messenger);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
     //Listener del boton encender que envia  msj para enceder Servo a Arduino atraves del Bluethoot
@@ -184,7 +179,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
 
                 case Sensor.TYPE_ACCELEROMETER:
 
-                    if ((event.values[0] > 20) || (event.values[1] > 20) || (event.values[2] > 20)) {
+                    if ((event.values[0] > 20) || (event.values[1] > 20)) {
 
                         if(!flagAcelerometro){
                             acelerometro.setBackgroundColor(Color.parseColor("#cf091c"));
@@ -303,20 +298,25 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     {
 
         Parar_Sensores();
-
         super.onStop();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
+        Intent intent = new Intent(getApplicationContext(), ServicioBT.class);
+        Messenger messenger = new Messenger(handler);
+        intent.putExtra("MESSENGER_2", messenger);
+        intent.putExtra("CLIENTE",ServicioBT.ACTIVITY_CRIARD);
 
+        bindService(intent, mConnection, Context.BIND_ADJUST_WITH_ACTIVITY);
     }
     @Override
     protected void onDestroy()
     {
         Parar_Sensores();
-        //unbindService(mConnection);
+        unbindService(mConnection);
+        unregisterReceiver(mReceiver);
         super.onDestroy();
     }
 
@@ -353,37 +353,48 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
             Bundle data = message.getData();
             String text;
             int servo_encendido;
+            int servo_apagado;
             int led_encendido;
+            int led_apagado;
             int micro_encendido;
+            int micro_apagado;
             int humedad_encendido;
+            int humedad_apagado;
             Log.i("MainActivity","Respuesta recibida");
             Log.i("MainActivity", String.valueOf(message.arg1));
             switch (message.arg1){
                 case ServicioBT.GET_RESPUESTA:
                     text = data.getString(ServicioBT.RESULTPATH);
                     servo_encendido = text.indexOf("Q");
+                    servo_apagado = text.indexOf("W");
                     led_encendido = text.indexOf("E");
-                    micro_encendido = text.indexOf("T");
+                    led_apagado = text.indexOf("R");
+                    micro_encendido = text.indexOf("M");
+                    micro_apagado = text.indexOf("Y");
                     humedad_encendido = text.indexOf("U");
+                    humedad_apagado = text.indexOf("I");
 
                     if(servo_encendido >= 0){
                         txt_servo.setText("Meciendo");
                         txt_servo.setBackgroundResource(R.drawable.encendido);
-                    }else{
+                    }
+                    if(servo_apagado >= 0){
                         txt_servo.setText("En Reposo");
                         txt_servo.setBackgroundResource(R.drawable.apagado);
                     }
                     if(led_encendido >= 0){
                         txt_led.setText("Luz encendida");
                         txt_led.setBackgroundResource(R.drawable.encendido);
-                    }else{
+                    }
+                    if(led_apagado >= 0) {
                         txt_led.setText("Luz Apagada");
                         txt_led.setBackgroundResource(R.drawable.apagado);
                     }
                     if(micro_encendido >= 0){
                         txt_micro.setText("Llorando");
                         txt_micro.setBackgroundResource(R.drawable.encendido);
-                    }else{
+                    }
+                    if(micro_apagado >= 0){
                         txt_micro.setText("Durmiendo");
                         txt_micro.setBackgroundResource(R.drawable.apagado);
                     }

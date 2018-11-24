@@ -50,10 +50,15 @@ public class ServicioBT extends Service {
     public static final int GET_MUSICA_OFF=6;
     public static final int GET_RESPUESTA=7;
     public static final int GET_INFO=0;
-
+    public static final int GET_INFO_TEMP=9;
+    public static final int ACTIVITY_TEMP = 11;
+    public static final int ACTIVITY_CRIARD = 10;
+    private int cliente_temp = 0;
+    private int cliente_criard = 0;
     public static final String RESULTPATH = "RespuestaServicio";
     Handler bluetoothIn;
     private Messenger outMessenger;
+    private Messenger outMessenger_temp;
     final int handlerState = 0; //used to identify handler message
 
     private class ServiceHandler extends Handler{
@@ -63,6 +68,10 @@ public class ServicioBT extends Service {
                 case GET_INFO:
                     Log.i("Notificacion", "Solicitud recibida");
                     mConnectedThread.write("#");
+                    break;
+                case GET_INFO_TEMP:
+                    Log.i("Notificacion", "Solicitud recibida");
+                    mConnectedThread.write("9");
                     break;
                 case GET_SERVO_ON:
                     mConnectedThread.write("1");
@@ -149,12 +158,26 @@ public class ServicioBT extends Service {
         Bundle extras = intent.getExtras();
         // Get messager from the Activity
         if (extras != null) {
-            outMessenger = (Messenger) extras.get("MESSENGER");
+            int cliente =  (int) extras.get("CLIENTE");
+            if(cliente == 10){
+                Log.i("Servicio","Se conecto criard");
+                outMessenger = (Messenger) extras.get("MESSENGER_2");
+                cliente_criard = 1;
+                cliente_temp = 0;
+                outMessenger_temp = null;
+            }
+            if(cliente == 11){
+                Log.i("Servicio","se conecto temperatura");
+                outMessenger_temp = (Messenger) extras.get("MESSENGER_1");
+                outMessenger = null;
+                cliente_temp = 1;
+                cliente_criard = 0;
+            }
         }
         return messenger.getBinder();
     }
 
-
+    
     private class ConnectedThread extends Thread {
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
@@ -232,7 +255,7 @@ public class ServicioBT extends Service {
                     if (endOfLineIndex > 0) {
 
                         int estadoCuna = recDataString.indexOf("U");
-                        int estandoLLando = recDataString.indexOf("T");
+                        int estandoLLando = recDataString.indexOf("M");
                         if(estadoCuna >= 0){
                             new Thread(new Runnable() {
 
@@ -295,15 +318,29 @@ public class ServicioBT extends Service {
                             }).start();
 
                         }
-                        msg_servo.arg1 = GET_RESPUESTA;
-                        extra_servo.putString(RESULTPATH, recDataString.toString());
-                        msg_servo.setData(extra_servo);
-                        try {
+                        if(cliente_criard == 1){
+                            msg_servo.arg1 = GET_RESPUESTA;
+                            extra_servo.putString(RESULTPATH, recDataString.toString());
+                            msg_servo.setData(extra_servo);
+                            try {
 
-                            outMessenger.send(msg_servo);
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
+                                outMessenger.send(msg_servo);
+                            } catch (RemoteException e) {
+                                e.printStackTrace();
+                            }
                         }
+                        if(cliente_temp == 1){
+                            msg_servo.arg1 = GET_RESPUESTA;
+                            extra_servo.putString(RESULTPATH, recDataString.toString());
+                            msg_servo.setData(extra_servo);
+                            try {
+
+                                outMessenger_temp.send(msg_servo);
+                            } catch (RemoteException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
                     }
                     recDataString.delete(0, recDataString.length());
 
@@ -312,7 +349,6 @@ public class ServicioBT extends Service {
             }
         };
     }
-
 
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();

@@ -29,19 +29,25 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".ActivityInicial"
-            android:label="@string/title_activity_inicial"></activity>
+            android:label="@string/title_activity_inicial"
+            android:screenOrientation="locked"></activity>
         <!-- - Defino la activity con el listado de dispositivos de Bluethoot encontrados -->
-        <activity android:name=".DeviceListActivity">
+        <activity android:name=".DeviceListActivity"
+            android:screenOrientation="locked">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
             </intent-filter>
         </activity>
-        <activity android:name=".CRIArdMainActivity" />
+        <activity android:name=".CRIArdMainActivity"
+            android:screenOrientation="locked"/>
         <activity
             android:name=".ListaSensoresActivity"
             android:label="Lista de Sensores"
-            android:screenOrientation="portrait"></activity>
-        <activity android:name=".MainActivity">
+            android:screenOrientation="locked">
+
+        </activity>
+        <activity android:name=".MainActivity"
+            android:screenOrientation="locked">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -56,7 +62,8 @@
 
         <activity
             android:name=".Informe_temperatura"
-            android:label="@string/title_activity_informe_temperatura"></activity>
+            android:label="@string/title_activity_informe_temperatura"
+            android:screenOrientation="locked"></activity>
     </application>
 
 </manifest>

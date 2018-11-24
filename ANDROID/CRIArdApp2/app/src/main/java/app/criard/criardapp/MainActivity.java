@@ -87,7 +87,7 @@ public class MainActivity extends AppCompatActivity{
                     //Simula el tiempo aleatorio de descargar una imagen, al dormir unos milisegundos aleatorios al hilo en segundo plano
                     Thread.sleep(200);
                     publishProgress(contador);
-                    contador = contador + 2;
+                    contador++;
                 } catch (InterruptedException e) {
                     cancel(true); //Cancelamos si entramos al catch porque algo ha ido mal
                     e.printStackTrace();
@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity{
         @Override
         protected void onPostExecute(String cantidadProcesados) {
             Log.i("Async","Finaliza el hilo");
-            Intent intent = new Intent(MainActivity.this,  CRIArdMainActivity.class);
+            Intent intent = new Intent(MainActivity.this,  Informe_temperatura.class);
             startActivity(intent);
             finish();
         }
