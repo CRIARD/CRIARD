@@ -21,7 +21,6 @@
         android:layout_alignParentTop="true"
         android:layout_marginTop="210dp"
         android:layout_toEndOf="@+id/imageView3"
-        android:text="30°"
         android:textAlignment="center"
         android:textSize="80sp"
         android:textStyle="bold" />

@@ -10,6 +10,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Activity;
 import android.os.CountDownTimer;
@@ -29,17 +30,23 @@ import android.widget.Toast;
 public class Informe_temperatura extends Activity {
 
     TextView temp;
+    boolean temperatura;
     Messenger mService = null;
     boolean mBound;
     private int contador = 0;
+    private HandlerActivity handler;
+    private ActualizarTemperatura actualizarTemperatura;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_informe_temperatura);
+        temperatura = true;
         temp = (TextView) findViewById(R.id.temp);
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         navigation.setSelectedItemId(R.id.navigation_home);
+        actualizarTemperatura = new ActualizarTemperatura();
+        handler = HandlerActivity.getInstance();
 
         IntentFilter filter = new IntentFilter();
 
@@ -48,42 +55,37 @@ public class Informe_temperatura extends Activity {
         registerReceiver(mReceiver, filter);
 
         new Thread(new Runnable() {
-
             @Override
             public void run() {
-                // El servicio se finaliza a sí mismo cuando finaliza su
-                // trabajo.
-
-                    try {
-                        while(!mBound) {
-                            // Simulamos trabajo de 10 segundos.
-                            Thread.sleep(10000);
-
-                            Message msg = Message.obtain(null, ServicioBT.GET_INFO_TEMP, 0, 0);
-                            try {
-                                mService.send(msg);
-                            } catch (RemoteException e) {
-                                e.printStackTrace();
-                            }
+                try {
+                    while(temperatura) {
+                        Thread.sleep(2000);
+                        Message msg = Message.obtain(null, ServicioBT.GET_INFO_TEMP, 0, 0);
+                        try {
+                            mService.send(msg);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
                         }
-                    } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
                     }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }).start();
+
+        actualizarTemperatura.execute();
+
     }
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
-
         @Override
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.navigation_home:
                     return true;
                 case R.id.navigation_cuna:
-                    Intent intent1 = new Intent(Informe_temperatura.this,CRIArdMainActivity.class);
-                    startActivity(intent1);
+                    Intent intent = new Intent(Informe_temperatura.this,CRIArdMainActivity.class);
+                    startActivity(intent);
                     finish();
                     return true;
             }
@@ -97,26 +99,16 @@ public class Informe_temperatura extends Activity {
         super.onDestroy();
         unbindService(mConnection);
         unregisterReceiver(mReceiver);
-    }
-    private Handler handler = new Handler() {
-        public void handleMessage(Message message) {
-            Bundle data = message.getData();
-            String text;
-            int temperatura;
-            Log.i("MainActivity","Respuesta recibida");
-            Log.i("MainActivity", String.valueOf(message.arg1));
-            switch (message.arg1){
-                case ServicioBT.GET_RESPUESTA:
-                    text = data.getString(ServicioBT.RESULTPATH);
-                    temperatura = text.indexOf("T");
-                    if(temperatura >= 0){
-                        showToast("Temperatura: " + text.substring(temperatura));
-                    }
-                    break;
-            }
-        }
-    };
+        temperatura = false;
+        actualizarTemperatura.cancel(true);
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+    }
     private void showToast(String message) {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
     }
@@ -166,9 +158,7 @@ public class Informe_temperatura extends Activity {
         return builder.create();
     }
     @Override
-    protected void onStop()
-    {
-
+    protected void onStop() {
         super.onStop();
     }
     @Override
@@ -176,7 +166,7 @@ public class Informe_temperatura extends Activity {
         super.onStart();
         Intent intent = new Intent(getApplicationContext(), ServicioBT.class);
         Messenger messenger = new Messenger(handler);
-        intent.putExtra("MESSENGER_1", messenger);
+        intent.putExtra("MESSENGER", messenger);
         intent.putExtra("CLIENTE",ServicioBT.ACTIVITY_TEMP);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
@@ -191,14 +181,10 @@ public class Informe_temperatura extends Activity {
             stopService(intent);
             finish();
         }
-
         new CountDownTimer(3000,1000){
 
             @Override
-            public void onTick(long millisUntilFinished) {
-
-            }
-
+            public void onTick(long millisUntilFinished) { }
             @Override
             public void onFinish() {
                 contador=0;
@@ -206,4 +192,39 @@ public class Informe_temperatura extends Activity {
         }.start();
     }
 
+    public class ActualizarTemperatura extends AsyncTask<Void, String, String> {
+
+        @Override
+        protected String doInBackground(Void... strings) {
+            Log.i("Async","Empieza a ejecutar el hilo");
+            while (true){
+                if(isCancelled())break;
+                try {
+                    //Simula el tiempo aleatorio de descargar una imagen, al dormir unos milisegundos aleatorios al hilo en segundo plano
+                    Thread.sleep(2000);
+                    publishProgress(handler.dato_temp);
+                } catch (InterruptedException e) {
+                    cancel(true); //Cancelamos si entramos al catch porque algo ha ido mal
+                    e.printStackTrace();
+                }
+
+            }
+            return null;
+        }
+
+
+        @Override
+        protected void onPreExecute() {
+
+        }
+
+        @Override
+        protected void onProgressUpdate(String... temperatura) {
+
+            temp.setText(temperatura[0]);
+        }
+        @Override
+        protected void onPostExecute(String cantidadProcesados) {
+        }
+    }
 }
