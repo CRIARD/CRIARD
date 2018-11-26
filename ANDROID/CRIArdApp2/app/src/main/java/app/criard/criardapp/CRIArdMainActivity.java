@@ -6,6 +6,7 @@ import android.app.Dialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -35,6 +36,7 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.MenuItem;
 import android.widget.CompoundButton;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.sql.Time;
@@ -76,6 +78,9 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     private int contador = 0;
     private ActualizarCuna actualizarCuna;
     Bundle extra;
+    ProgressBar progressBar;
+    private ProgressDialog mProgressDlg;
+    boolean cuna;
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
 
@@ -98,6 +103,13 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_criard_main);
+        cuna = true;
+        progressBar = (ProgressBar) findViewById(R.id.progressBar3);
+        progressBar.setVisibility(View.INVISIBLE);
+
+        mProgressDlg = new ProgressDialog(this);
+        mProgressDlg.setMessage("Conectando...");
+        mProgressDlg.setCancelable(false);
 
         actualizarCuna = new ActualizarCuna();
         handler = HandlerActivity.getInstance();
@@ -124,32 +136,8 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED); //Cambia el estado del Bluethoot (Acrtivado /Desactivado)
         //se define (registra) el handler que captura los broadcast anterirmente mencionados.
         registerReceiver(mReceiver, filter);
-        new Thread(new Runnable() {
-
-            @Override
-            public void run() {
-                // El servicio se finaliza a sí mismo cuando finaliza su
-                // trabajo.
-
-                try {
-                    while(!mBound) {
-                        // Simulamos trabajo de 2 segundos.
-                        Thread.sleep(2000);
-                        Message msg = Message.obtain(null, ServicioBT.GET_INFO, 0, 0);
-                        try {
-                            mService.send(msg);
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-        }).start();
         actualizarCuna.execute();
-    }
+     }
 
     //Listener del boton encender que envia  msj para enceder Servo a Arduino atraves del Bluethoot
     private ToggleButton.OnCheckedChangeListener btnAccionCuna = new ToggleButton.OnCheckedChangeListener() {
@@ -337,8 +325,9 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         Messenger messenger = new Messenger(handler);
         intent.putExtra("MESSENGER", messenger);
         intent.putExtra("CLIENTE",ServicioBT.ACTIVITY_CRIARD);
-
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        mProgressDlg.show();
+
     }
     @Override
     protected void onDestroy()
@@ -371,6 +360,24 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
     {
         super.onResume();
         Ini_Sensores();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    while(!mBound) {
+                        Thread.sleep(1000);
+                        Message msg = Message.obtain(null, ServicioBT.GET_INFO, 0, 0);
+                        try {
+                            mService.send(msg);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     private void showToast(String message) {
@@ -454,16 +461,16 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         @Override
         protected String doInBackground(Void... strings) {
             Log.i("Async","Empieza a ejecutar el hilo");
-            while (true){
-                if(isCancelled())break;
+            publishProgress(handler.dato_cuna);
+            while (!isCancelled()){
                 try {
                     //Simula el tiempo aleatorio de descargar una imagen, al dormir unos milisegundos aleatorios al hilo en segundo plano
-                    Thread.sleep(2000);
-                    publishProgress(handler.dato_cuna);
+                    Thread.sleep(200);
                 } catch (InterruptedException e) {
                     cancel(true); //Cancelamos si entramos al catch porque algo ha ido mal
                     e.printStackTrace();
                 }
+                publishProgress(handler.dato_cuna);
 
             }
             return null;
@@ -478,50 +485,54 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         @Override
         protected void onProgressUpdate(String... datos) {
 
-            String text;
-            int servo_encendido;
-            int servo_apagado;
-            int led_encendido;
-            int led_apagado;
-            int micro_encendido;
-            int micro_apagado;
-            int humedad_encendido;
-            int humedad_apagado;
-            servo_encendido = datos[0].indexOf("Q");
-            servo_apagado = datos[0].indexOf("W");
-            led_encendido = datos[0].indexOf("E");
-            led_apagado = datos[0].indexOf("R");
-            micro_encendido = datos[0].indexOf("M");
-            micro_apagado = datos[0].indexOf("Y");
-            humedad_encendido = datos[0].indexOf("U");
-            humedad_apagado = datos[0].indexOf("I");
+            progressBar.setVisibility(View.INVISIBLE);
+            mProgressDlg.dismiss();
+            if(datos[0]!=null) {
+                String text;
+                int servo_encendido;
+                int servo_apagado;
+                int led_encendido;
+                int led_apagado;
+                int micro_encendido;
+                int micro_apagado;
+                int humedad_encendido;
+                int humedad_apagado;
+                servo_encendido = datos[0].indexOf("Q");
+                servo_apagado = datos[0].indexOf("W");
+                led_encendido = datos[0].indexOf("E");
+                led_apagado = datos[0].indexOf("R");
+                micro_encendido = datos[0].indexOf("M");
+                micro_apagado = datos[0].indexOf("Y");
+                humedad_encendido = datos[0].indexOf("U");
+                humedad_apagado = datos[0].indexOf("I");
 
-            if(servo_encendido >= 0){
-                txt_servo.setText("Meciendo");
-                txt_servo.setBackgroundResource(R.drawable.encendido);
-            }
-            if(servo_apagado >= 0){
-                txt_servo.setText("En Reposo");
-                txt_servo.setBackgroundResource(R.drawable.apagado);
-            }
-            if(led_encendido >= 0){
-                txt_led.setText("Luz encendida");
-                txt_led.setBackgroundResource(R.drawable.encendido);
-            }
-            if(led_apagado >= 0) {
-                txt_led.setText("Luz Apagada");
-                txt_led.setBackgroundResource(R.drawable.apagado);
-            }
-            if(micro_encendido >= 0){
-                txt_micro.setText("Llorando");
-                txt_micro.setBackgroundResource(R.drawable.encendido);
-            }
-            if(micro_apagado >= 0){
-                txt_micro.setText("Durmiendo");
-                txt_micro.setBackgroundResource(R.drawable.apagado);
-            }
-            if(humedad_encendido >= 0){
-                Toast.makeText(CRIArdMainActivity.this, datos[0], Toast.LENGTH_LONG).show();
+                if (servo_encendido >= 0) {
+                    txt_servo.setText("Meciendo");
+                    txt_servo.setBackgroundResource(R.drawable.encendido);
+                }
+                if (servo_apagado >= 0) {
+                    txt_servo.setText("En Reposo");
+                    txt_servo.setBackgroundResource(R.drawable.apagado);
+                }
+                if (led_encendido >= 0) {
+                    txt_led.setText("Luz encendida");
+                    txt_led.setBackgroundResource(R.drawable.encendido);
+                }
+                if (led_apagado >= 0) {
+                    txt_led.setText("Luz Apagada");
+                    txt_led.setBackgroundResource(R.drawable.apagado);
+                }
+                if (micro_encendido >= 0) {
+                    txt_micro.setText("Llorando");
+                    txt_micro.setBackgroundResource(R.drawable.encendido);
+                }
+                if (micro_apagado >= 0) {
+                    txt_micro.setText("Durmiendo");
+                    txt_micro.setBackgroundResource(R.drawable.apagado);
+                }
+                if (humedad_encendido >= 0) {
+                    Toast.makeText(CRIArdMainActivity.this, datos[0], Toast.LENGTH_LONG).show();
+                }
             }
         }
         @Override

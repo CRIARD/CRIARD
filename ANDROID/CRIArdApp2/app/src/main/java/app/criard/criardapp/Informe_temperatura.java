@@ -2,6 +2,7 @@ package app.criard.criardapp;
 
 import android.app.AlertDialog;
 import android.app.NotificationManager;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -24,6 +25,8 @@ import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -36,12 +39,17 @@ public class Informe_temperatura extends Activity {
     private int contador = 0;
     private HandlerActivity handler;
     private ActualizarTemperatura actualizarTemperatura;
+    ProgressBar progressBar;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_informe_temperatura);
         temperatura = true;
         temp = (TextView) findViewById(R.id.temp);
+
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+
+        //se asocia un listener al boton cancelar para la ventana de dialogo ue busca los dispositivos bluethoot
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         navigation.setSelectedItemId(R.id.navigation_home);
@@ -53,29 +61,9 @@ public class Informe_temperatura extends Activity {
         filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED); //Cambia el estado del Bluethoot (Acrtivado /Desactivado)
         //se define (registra) el handler que captura los broadcast anterirmente mencionados.
         registerReceiver(mReceiver, filter);
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    while(temperatura) {
-                        Thread.sleep(2000);
-                        Message msg = Message.obtain(null, ServicioBT.GET_INFO_TEMP, 0, 0);
-                        try {
-                            mService.send(msg);
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-
         actualizarTemperatura.execute();
-
     }
+
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
         @Override
@@ -107,7 +95,32 @@ public class Informe_temperatura extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(1000);
+                    Message msg1 = Message.obtain(null, ServicioBT.GET_INFO_TEMP, 0, 0);
+                    try {
+                        mService.send(msg1);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                    while(temperatura) {
+                        Thread.sleep(15000);
+                        Message msg = Message.obtain(null, ServicioBT.GET_INFO_TEMP, 0, 0);
+                        try {
+                            mService.send(msg);
+                        } catch (RemoteException e) {
+                            e.printStackTrace();
+                        }
+                    }
 
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
     private void showToast(String message) {
         Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
@@ -169,6 +182,7 @@ public class Informe_temperatura extends Activity {
         intent.putExtra("MESSENGER", messenger);
         intent.putExtra("CLIENTE",ServicioBT.ACTIVITY_TEMP);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+
     }
     @Override
     public void onBackPressed() {
@@ -197,17 +211,17 @@ public class Informe_temperatura extends Activity {
         @Override
         protected String doInBackground(Void... strings) {
             Log.i("Async","Empieza a ejecutar el hilo");
-            while (true){
-                if(isCancelled())break;
+
+            publishProgress(handler.dato_temp);
+            while (!isCancelled()){
                 try {
                     //Simula el tiempo aleatorio de descargar una imagen, al dormir unos milisegundos aleatorios al hilo en segundo plano
-                    Thread.sleep(2000);
-                    publishProgress(handler.dato_temp);
+                    Thread.sleep(200);
                 } catch (InterruptedException e) {
                     cancel(true); //Cancelamos si entramos al catch porque algo ha ido mal
                     e.printStackTrace();
                 }
-
+                publishProgress(handler.dato_temp);
             }
             return null;
         }
@@ -221,6 +235,7 @@ public class Informe_temperatura extends Activity {
         @Override
         protected void onProgressUpdate(String... temperatura) {
 
+            progressBar.setVisibility(View.INVISIBLE);
             temp.setText(temperatura[0]);
         }
         @Override

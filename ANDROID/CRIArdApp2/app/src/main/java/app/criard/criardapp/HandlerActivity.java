@@ -16,6 +16,8 @@ class HandlerActivity extends Handler {
 
         if (handler == null){ //if there is no instance available... create new one
             handler = new HandlerActivity();
+            handler.dato_temp = null;
+            handler.dato_cuna = null;
         }
         return handler;
     }
