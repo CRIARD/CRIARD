@@ -62,6 +62,7 @@ double coeficiente_porcentaje=255.0/1023.0; //100.0/1023.0; // El valor de la en
 #define apagarLEDBT     '4'
 #define encenderMusicBT '5'
 #define apagarMusicBT   '6'
+#define informarTemp   '9'
 
 //Variables de estado de cada sensor//
 String ESTADOLED = "";
@@ -73,7 +74,7 @@ String SERVOENCENDIDO  = "Q";
 String SERVOAPAGADO    = "W";
 String LUZENCENDIDA    = "E";
 String LUZAPAGADA      = "R";
-String MICROENCENDIDO  = "T";
+String MICROENCENDIDO  = "M";
 String MICROAPAGADO    = "Y";
 String COLCHONMOJADO   = "U";
 String COLCHONSECO     = "I";
@@ -144,7 +145,6 @@ void loop()
     hamacarCuna(); 
     detectarLuz();
     detectarMojado();
-    informarTemperatura();
 }
 /**Funcion que utiliza el BT para determinar la accion a realizar**/
 
@@ -182,14 +182,17 @@ void informarEstadoSensor(){
 
 void informarTemperatura(){
   tiempoInfoTemp = millis() - tiempoInfoTempIni;
-  if(tiempoInfoTemp > 5000){
-    MENSAJE +=  "T" + String(dht.readTemperature()) + "H" + String(dht.readHumidity());  
+  //if(tiempoInfoTemp > 5000){
+    MENSAJE = "#";
+    MENSAJE +=  "T" + String(int(dht.readTemperature())) + "H" + String(int(dht.readHumidity()));  
+    Serial.println(MENSAJE);
     enviarEstadoActualAANDROID(MENSAJE); 
     BTserial.write('\n');
-    MENSAJE = "#";
+    
     BTserial.flush();
     tiempoInfoTempIni = millis();
-  }
+    MENSAJE = "#";
+  //}
 }
 void enviarEstadoActualAANDROID(String msj){
     BTserial.print(msj);     
@@ -226,6 +229,10 @@ void analizarDato(char c)
       case apagarMusicBT:
       Serial.println("Solicitud recibida: " + c);
         apagarMelody();
+        break;
+      case informarTemp:
+      Serial.println("Solicitud recibida: " +String(c));
+      informarTemperatura();
         break;
       default:
         Serial.print(c);
