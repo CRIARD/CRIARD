@@ -50,37 +50,111 @@ public class ServicioBT extends Service {
     public static final int GET_MUSICA_OFF=6;
     public static final int GET_RESPUESTA=7;
     public static final int GET_INFO=0;
-
+    public static final int GET_INFO_TEMP=9;
+    public static final int ACTIVITY_TEMP = 11;
+    public static final int ACTIVITY_CRIARD = 10;
+    private int cliente_temp = 0;
+    private int cliente_criard = 0;
     public static final String RESULTPATH = "RespuestaServicio";
     Handler bluetoothIn;
     private Messenger outMessenger;
     final int handlerState = 0; //used to identify handler message
-
+    int cliente = 0;
     private class ServiceHandler extends Handler{
         @Override
         public void handleMessage(Message msg) {
+            Bundle extra = new Bundle();
+            Message message = Message.obtain();
             switch (msg.what){
                 case GET_INFO:
-                    Log.i("Notificacion", "Solicitud recibida");
-                    mConnectedThread.write("#");
+                    Log.i("Notificacion", "Se conecto CRIARD");
+                    //mConnectedThread.write("#");
+                    message.arg1 = GET_RESPUESTA;
+                    extra.putString(RESULTPATH,"QEM");
+                    message.setData(extra);
+                    try {
+                        outMessenger.send(message);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case GET_INFO_TEMP:
+                    Log.i("Notificacion", "Se conecto Temperatura");
+                    //mConnectedThread.write("$");
+                    message.arg1 = GET_RESPUESTA;
+                    extra.putString(RESULTPATH,"T22°");
+                    message.setData(extra);
+                    try {
+                        outMessenger.send(message);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 case GET_SERVO_ON:
                     mConnectedThread.write("1");
+                    message.arg1 = GET_RESPUESTA;
+                    extra.putString(RESULTPATH,"Q");
+                    message.setData(extra);
+                    try {
+                        outMessenger.send(message);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 case GET_SERVO_OFF:
                     mConnectedThread.write("2");
+                    message.arg1 = GET_RESPUESTA;
+                    extra.putString(RESULTPATH,"W");
+                    message.setData(extra);
+                    try {
+                        outMessenger.send(message);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 case GET_LED_ON:
                     mConnectedThread.write("3");
+                    message.arg1 = GET_RESPUESTA;
+                    extra.putString(RESULTPATH,"E");
+                    message.setData(extra);
+                    try {
+                        outMessenger.send(message);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 case GET_LED_OFF:
                     mConnectedThread.write("4");
+                    message.arg1 = GET_RESPUESTA;
+                    extra.putString(RESULTPATH,"R");
+                    message.setData(extra);
+                    try {
+                        outMessenger.send(message);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 case GET_MUSICA_ON:
                     mConnectedThread.write("5");
+                    message.arg1 = GET_RESPUESTA;
+                    extra.putString(RESULTPATH,"M");
+                    message.setData(extra);
+                    try {
+                        outMessenger.send(message);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 case GET_MUSICA_OFF:
                     mConnectedThread.write("6");
+                    message.arg1 = GET_RESPUESTA;
+                    extra.putString(RESULTPATH,"Y");
+                    message.setData(extra);
+                    try {
+                        outMessenger.send(message);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 default:
                     super.handleMessage(msg);
@@ -131,6 +205,7 @@ public class ServicioBT extends Service {
     //idArranque: Es el id del servicio a ejecutar
     public int onStartCommand(Intent intenc, int flags, int idArranque) {
         Toast.makeText(this, "Servicio arrancado " + idArranque, Toast.LENGTH_SHORT).show();
+
         return START_NOT_STICKY;
     }
 
@@ -149,12 +224,13 @@ public class ServicioBT extends Service {
         Bundle extras = intent.getExtras();
         // Get messager from the Activity
         if (extras != null) {
+            cliente = 1;
             outMessenger = (Messenger) extras.get("MESSENGER");
         }
         return messenger.getBinder();
     }
 
-
+    
     private class ConnectedThread extends Thread {
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
@@ -232,7 +308,7 @@ public class ServicioBT extends Service {
                     if (endOfLineIndex > 0) {
 
                         int estadoCuna = recDataString.indexOf("U");
-                        int estandoLLando = recDataString.indexOf("T");
+                        int estandoLLando = recDataString.indexOf("M");
                         if(estadoCuna >= 0){
                             new Thread(new Runnable() {
 
@@ -295,24 +371,22 @@ public class ServicioBT extends Service {
                             }).start();
 
                         }
-                        msg_servo.arg1 = GET_RESPUESTA;
-                        extra_servo.putString(RESULTPATH, recDataString.toString());
-                        msg_servo.setData(extra_servo);
-                        try {
-
-                            outMessenger.send(msg_servo);
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
+                        if(cliente != 0){
+                            msg_servo.arg1 = GET_RESPUESTA;
+                            extra_servo.putString(RESULTPATH, recDataString.toString());
+                            msg_servo.setData(extra_servo);
+                            try {
+                                outMessenger.send(msg_servo);
+                            } catch (RemoteException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                     recDataString.delete(0, recDataString.length());
-
                 }
-
             }
         };
     }
-
 
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
