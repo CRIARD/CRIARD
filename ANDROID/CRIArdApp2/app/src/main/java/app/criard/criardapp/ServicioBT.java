@@ -69,11 +69,11 @@ public class ServicioBT extends Service {
                 case GET_INFO:
                     Log.i("Notificacion", "Se conecto CRIARD");
                     mConnectedThread.write("#");
+                    break;
                 case GET_INFO_TEMP:
                     Log.i("Notificacion", "Se conecto Temperatura");
                     mConnectedThread.write("$");
                     break;
-
                 case GET_SERVO_ON:
                     mConnectedThread.write("1");
                     break;

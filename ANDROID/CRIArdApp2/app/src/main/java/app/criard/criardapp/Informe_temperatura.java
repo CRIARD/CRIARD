@@ -99,15 +99,8 @@ public class Informe_temperatura extends Activity {
             @Override
             public void run() {
                 try {
-                    Thread.sleep(1000);
-                    Message msg1 = Message.obtain(null, ServicioBT.GET_INFO_TEMP, 0, 0);
-                    try {
-                        mService.send(msg1);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
                     while(temperatura) {
-                        Thread.sleep(15000);
+                        Thread.sleep(4000);
                         Message msg = Message.obtain(null, ServicioBT.GET_INFO_TEMP, 0, 0);
                         try {
                             mService.send(msg);
@@ -146,6 +139,9 @@ public class Informe_temperatura extends Activity {
                 if(state == BluetoothAdapter.STATE_DISCONNECTED || state == BluetoothAdapter.STATE_OFF){
                     Toast.makeText(Informe_temperatura.this,"Se ha perdido la conexion..",Toast.LENGTH_SHORT).show();
                     unbindService(mConnection);
+                    unregisterReceiver(mReceiver);
+                    temperatura = false;
+                    actualizarTemperatura.cancel(true);
                     AlertDialog alerta = createSimpleDialog();
                     alerta.show();
                 }
@@ -212,7 +208,7 @@ public class Informe_temperatura extends Activity {
         protected String doInBackground(Void... strings) {
             Log.i("Async","Empieza a ejecutar el hilo");
 
-            publishProgress(handler.dato_temp);
+            publishProgress(handler.getDato_temp());
             while (!isCancelled()){
                 try {
                     //Simula el tiempo aleatorio de descargar una imagen, al dormir unos milisegundos aleatorios al hilo en segundo plano
@@ -221,7 +217,7 @@ public class Informe_temperatura extends Activity {
                     cancel(true); //Cancelamos si entramos al catch porque algo ha ido mal
                     e.printStackTrace();
                 }
-                publishProgress(handler.dato_temp);
+                publishProgress(handler.getDato_temp());
             }
             return null;
         }
@@ -231,10 +227,8 @@ public class Informe_temperatura extends Activity {
         protected void onPreExecute() {
 
         }
-
         @Override
         protected void onProgressUpdate(String... temperatura) {
-
             progressBar.setVisibility(View.INVISIBLE);
             temp.setText(temperatura[0]);
         }
