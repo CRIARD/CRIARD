@@ -7,7 +7,7 @@
 
 //Pines utilizados:
 #define PinServo      8   //Pin donde está conectado el servo 
-#define pinMicro      A3  //Pin donde está conectado el servo 
+#define pinMicro      A3  //Pin donde está conectado el Microfono
 #define PinLDR        A1  // Pin donde esta conectado el LDR
 #define PinLED        6   // Pin donde esta conectado el LED (PWM)
 #define PinLED2        13   // Pin donde esta conectado el LED que se activa con sensor proximidad desde celular
@@ -24,9 +24,9 @@ int flagBuzzer;
 
 
 //Variables del Servo
-#define ServoCerrado  90  // posición inicial 
-#define ServoQUIETO  90   // posición inicial 
-#define ServoAbierto  180 // posición de 0 grados
+#define ServoCerrado  50  // posición inicial 
+#define ServoQUIETO  70   // posición inicial 
+#define ServoAbierto  140 // posición de 0 grados
 int tiempoInicialAmaque = 0;
 int tiempoAmaque = 0;
 int prendoCuna = 0;
@@ -62,7 +62,6 @@ double coeficiente_porcentaje=255.0/1023.0; //100.0/1023.0; // El valor de la en
 #define apagarLEDBT     '4'
 #define encenderMusicBT '5'
 #define apagarMusicBT   '6'
-#define informarTemp   '9'
 
 //Variables de estado de cada sensor//
 String ESTADOLED = "";
@@ -78,7 +77,8 @@ String MICROENCENDIDO  = "M";
 String MICROAPAGADO    = "Y";
 String COLCHONMOJADO   = "U";
 String COLCHONSECO     = "I";
-String MENSAJE = "#";
+String MENSAJE = "#C";
+String TEMPERATURA="#T";
 int tiempoInicioConex = 0;
 
 
@@ -124,6 +124,7 @@ void setup()
     tiempoUltimoLlanto = millis();
     tiempoInicioProm = millis();
     tiempoFinProm = 0; 
+
     
 }
  
@@ -135,16 +136,22 @@ void loop()
       //se los lee y se los muestra en el monitor serie
       c = BTserial.read();    
       analizarDato(c);   
-      Serial.println("Envio de informe");
-      if(c == "#"){
-        Serial.println("Envio de informe");
-        informarEstadoSensor();  
-      }          
+      switch(c){
+        case '$':
+          Serial.println("Envio de informe");
+          informarTemperatura();  
+          break;      
+        case '#':
+          Serial.println("Envio de informe");
+          informarEstadoSensor();  
+          break; 
+      }        
     }
     escucharLlanto();
     hamacarCuna(); 
     detectarLuz();
     detectarMojado();
+    
 }
 /**Funcion que utiliza el BT para determinar la accion a realizar**/
 
@@ -176,22 +183,21 @@ void informarEstadoSensor(){
     enviarEstadoActualAANDROID(MENSAJE); 
     BTserial.write('\n');
     Serial.println(MENSAJE);
-    MENSAJE = "#";
+    MENSAJE = "#C";
     BTserial.flush();
   }
 
 void informarTemperatura(){
-  tiempoInfoTemp = millis() - tiempoInfoTempIni;
+  //tiempoInfoTemp = millis() - tiempoInfoTempIni;
   //if(tiempoInfoTemp > 5000){
-    MENSAJE = "#";
-    MENSAJE +=  "T" + String(int(dht.readTemperature())) + "H" + String(int(dht.readHumidity()));  
-    Serial.println(MENSAJE);
-    enviarEstadoActualAANDROID(MENSAJE); 
+    TEMPERATURA += String(dht.readTemperature());// + "H" + String(dht.readHumidity());  
+    enviarEstadoActualAANDROID(TEMPERATURA); 
+
     BTserial.write('\n');
-    
+    Serial.println(TEMPERATURA);
+    TEMPERATURA = "#T";
     BTserial.flush();
-    tiempoInfoTempIni = millis();
-    MENSAJE = "#";
+    //tiempoInfoTempIni = millis();
   //}
 }
 void enviarEstadoActualAANDROID(String msj){
@@ -221,18 +227,15 @@ void analizarDato(char c)
       case encenderMusicBT:
       Serial.println("Solicitud recibida: " + c);
         
-        if(flagBuzzer==0){
+        //if(flagBuzzer==0){
          sonarMelody6();
-          }
+          //sonarMelody4();
+          //}
         flagBuzzer=1;
         break;
       case apagarMusicBT:
       Serial.println("Solicitud recibida: " + c);
         apagarMelody();
-        break;
-      case informarTemp:
-      Serial.println("Solicitud recibida: " +String(c));
-      informarTemperatura();
         break;
       default:
         Serial.print(c);
