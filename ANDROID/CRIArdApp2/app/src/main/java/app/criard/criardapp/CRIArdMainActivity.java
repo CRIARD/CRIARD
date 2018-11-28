@@ -336,6 +336,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         unbindService(mConnection);
         unregisterReceiver(mReceiver);
         actualizarCuna.cancel(true);
+        cuna = false;
         super.onDestroy();
     }
 
@@ -365,7 +366,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
             public void run() {
                 try {
                     while(!mBound) {
-                        Thread.sleep(1000);
+                        Thread.sleep(5000);
                         Message msg = Message.obtain(null, ServicioBT.GET_INFO, 0, 0);
                         try {
                             mService.send(msg);
@@ -405,6 +406,8 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                 if(state == BluetoothAdapter.STATE_DISCONNECTED || state == BluetoothAdapter.STATE_OFF){
                     Toast.makeText(CRIArdMainActivity.this,"Se ha perdido la conexion..",Toast.LENGTH_SHORT).show();
                     unbindService(mConnection);
+                    unregisterReceiver(mReceiver);
+                    actualizarCuna.cancel(true);
                     AlertDialog alerta = createSimpleDialog();
                     alerta.show();
                 }
@@ -461,7 +464,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
         @Override
         protected String doInBackground(Void... strings) {
             Log.i("Async","Empieza a ejecutar el hilo");
-            publishProgress(handler.dato_cuna);
+            publishProgress(handler.getDato_cuna());
             while (!isCancelled()){
                 try {
                     //Simula el tiempo aleatorio de descargar una imagen, al dormir unos milisegundos aleatorios al hilo en segundo plano
@@ -470,7 +473,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                     cancel(true); //Cancelamos si entramos al catch porque algo ha ido mal
                     e.printStackTrace();
                 }
-                publishProgress(handler.dato_cuna);
+                publishProgress(handler.getDato_cuna());
 
             }
             return null;
@@ -531,7 +534,7 @@ public class CRIArdMainActivity extends AppCompatActivity implements SensorEvent
                     txt_micro.setBackgroundResource(R.drawable.apagado);
                 }
                 if (humedad_encendido >= 0) {
-                    Toast.makeText(CRIArdMainActivity.this, datos[0], Toast.LENGTH_LONG).show();
+                    //Toast.makeText(CRIArdMainActivity.this, datos[0], Toast.LENGTH_LONG).show();
                 }
             }
         }

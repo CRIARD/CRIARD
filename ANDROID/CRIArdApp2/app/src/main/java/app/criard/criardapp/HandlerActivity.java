@@ -9,8 +9,8 @@ import android.widget.Toast;
 class HandlerActivity extends Handler {
 
     private static HandlerActivity handler;
-    public String dato_temp;
-    public String dato_cuna;
+    private String dato_temp;
+    private String dato_cuna;
 
     public static HandlerActivity getInstance(){
 
@@ -41,11 +41,12 @@ class HandlerActivity extends Handler {
 
                 cuna = text.indexOf("C");
                 temperatura = text.indexOf("T");
-
+                Log.i("Handler","entre al handler");
                 if(temperatura >= 0){
                     Log.i("Handler","temperatura");
-                    dato_temp = text.substring(temperatura+1,text.length());
-                }else {
+                    dato_temp = text.substring(temperatura+1,temperatura + 3) + "º";
+                }
+                if (cuna >= 0){
                     Log.i("Handler","servo encendido");
                     message.obj = "encendi el servo";
                     dato_cuna = text;
