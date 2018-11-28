@@ -1,11 +1,27 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Base.Theme.AppCompat.Light.DarkActionBar">
+    <style name="AppTheme" parent="Base.Theme.AppCompat.Light">
         <!-- Customize your theme here. -->
+        <item name="android:textColorPrimary">@color/textColorPrimary</item>
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+
+    </style>
+    <style name="tempBaja" parent="AlertDialog.AppCompat">
+        <item name="android:drawable">@drawable/encendido</item>
+    </style>
+    <style name="tempAlta" parent="AlertDialog.AppCompat">
+        <item name="android:drawable">@drawable/apagado</item>
     </style>
 
+    <style name="Toggle">
+        <item name="android:background">@drawable/toggle_button_bgc</item>
+        <item name="android:textOn"></item>
+        <item name="android:textOff"></item>
+        <item name="android:disabledAlpha">?android:attr/disabledAlpha</item>
+        <item name="android:layout_width">75px</item>
+        <item name="android:layout_height">34px</item>
+    </style>
 </resources>

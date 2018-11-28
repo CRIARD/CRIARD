@@ -1,313 +1,358 @@
-#include <ArduinoJson.h>
-
-//Fuente https://programarfacil.com/tutoriales/fragmentos/servomotor-con-arduino/
+#include <DHT.h>
 #include <Servo.h>
-#define ESPERA_LECTURAS 2000 // tiempo en milisegundos entre lecturas de la intensidad de la luz
+#include <SoftwareSerial.h>
+#include <SPI.h>
+#include <DHT.h>
+#include "melodias.h"
+
+//Pines utilizados:
+#define PinServo      8   //Pin donde está conectado el servo 
+#define pinMicro      A3  //Pin donde está conectado el Microfono
+#define PinLDR        A1  // Pin donde esta conectado el LDR
+#define PinLED        6   // Pin donde esta conectado el LED (PWM)
+#define PinLED2        13   // Pin donde esta conectado el LED que se activa con sensor proximidad desde celular
+#define PinBuzzer     12  // Pin donde esta conectado el buzzer
+#define sensorMojado  9   //variables de humedad
+#define DHTPIN        2   // Definimos el pin digital donde se conecta el sensor
+
+//Banderas de sensores entre Android y Arduino
+int flagNotificacion = 0;
+int flagNotificacionMojado = 0;
+int flagNotificacionLuz=0;
+int flagNotificacionInicial = 0;
+int flagBuzzer;
+
+
 //Variables del Servo
-#define PinServo      9   //Pin donde está conectado el servo 
-#define ServoCerrado  0   // posición inicial 
-#define ServoAbierto  180  // posición de 0 grados
+#define ServoCerrado  50  // posición inicial 
+#define ServoQUIETO  70   // posición inicial 
+#define ServoAbierto  140 // posición de 0 grados
 int tiempoInicialAmaque = 0;
 int tiempoAmaque = 0;
 int prendoCuna = 0;
-int amacar = 0;   //flag para amacar izquierda o derecha
-int posicionServo = ServoCerrado; //Va a contener la ubicación del servo
+int hamacar = 0;   //flag para hamacar izquierda o derecha
+int posicionServo = ServoQUIETO; //Va a contener la ubicación del servo
 Servo servoMotor;
 
 //Variables del micrófono
-#define pinMicro      A5   //Pin donde está conectado el servo 
-#define umbralRuido   72  //Valor que lee el microfono en silencio
 #define standby 20000
-int valorLlanto = 0;      //variable to store the value coming from the sensor
+double valorLlanto = 0;      //variable to store the value coming from the sensor
 int tiempoUltimoLlanto = 0;
 int tiempoSilencio = 0;
 int tiempoInicioProm = 0; // para calcular el ruido ambiente
 int tiempoFinProm = 0;
-int muestras = 0;
+int tiempoInfoTempIni = 0;
+int tiempoInfoTemp = 0;
+double muestras = 0;
+double sumaRuido = 0;
+double ruidoPromedio = 0;  
+double umbralRuidol= 80;
 
 //Variables LDR
-#define PinLDR A0 // Pin donde esta conectado el LDR
-#define PinLED 11 // Pin donde esta conectado el LED (PWM)
+#define ESPERA_LECTURAS 2000 // tiempo en milisegundos entre lecturas de la intensidad de la luz
 long cronometro_lecturas=0;
 long tiempo_transcurrido;
 unsigned int luminosidad;
-float coeficiente_porcentaje=100.0/1023.0; // El valor de la entrada analógica va de 0 a 1023 y se quiere convertir a porcentaje que va de cero a 100
+double coeficiente_porcentaje=255.0/1023.0; //100.0/1023.0; // El valor de la entrada analógica va de 0 a 1023 y se quiere convertir a porcentaje que va de cero a 100
 
-#include <SoftwareSerial.h>
-#include <SPI.h>
-#include <Ethernet.h>
- // arduino Rx (pin 2) ---- ESP8266 Tx
- // arduino Tx (pin 3) ---- ESP8266 Rx
-SoftwareSerial esp8266(2,3); 
+//Variables de mensajes Bluetooth
+#define encenderCunaBT  '1'
+#define apagarCunaBT    '2'
+#define encenderLEDBT   '3'
+#define apagarLEDBT     '4'
+#define encenderMusicBT '5'
+#define apagarMusicBT   '6'
 
-#define DEBUG true
-int conexionID = 0;
-String peticion = "";
+//Variables de estado de cada sensor//
+String ESTADOLED = "";
+String ESTADOSERVO = "";
+String ESTADOMICRO = "";
+String ESTADOCOLCHON = "";
+
+String SERVOENCENDIDO  = "Q";
+String SERVOAPAGADO    = "W";
+String LUZENCENDIDA    = "E";
+String LUZAPAGADA      = "R";
+String MICROENCENDIDO  = "M";
+String MICROAPAGADO    = "Y";
+String COLCHONMOJADO   = "U";
+String COLCHONSECO     = "I";
+String MENSAJE = "#C";
+String TEMPERATURA="#T";
+int tiempoInicioConex = 0;
+
+
+//Al utilizar la biblioteca SoftwareSerial los pines RX y TX para la transmicion serie de Bluethoot se pueden cambiar mapear a otros pines.
+//Sino se utiliza esta bibioteca esto no se puede realizar y se debera conectar al pin 0 y 1, conexion Serie no pudiendo imprmir por el monitor serie
+//Al estar estos ocupados.
+SoftwareSerial BTserial(10,11); // RX | TX
+
+
+char c = ' ';
+int flag = 1;
+//Humedad y temperatura ambiental
+#define DHTTYPE DHT11 // Dependiendo del tipo de sensor
+DHT dht(DHTPIN, DHTTYPE);// Inicializamos el sensor DHT11
 
 
 
-DynamicJsonBuffer jsonBuffer;
 void setup()
 {
-  Serial.begin(115200);  // monitor serial del arduino
-  esp8266.begin(115200); // baud rate del ESP8255
+    //Se configura la velocidad del puerto serie para poder imprimir en el puerto Serie
+    Serial.begin(9600);
+    Serial.println("Inicializando configuracion del HC-05...");
+  
+    //Se configura la velocidad de transferencia de datos entre el Bluethoot  HC05 y el de Android.
+    BTserial.begin(9600); 
+    Serial.println("Esperando Comandos AT...");
 
-  servoMotor.attach(PinServo); // el servo trabajará desde el pin definido como PinServo
-  servoMotor.write(ServoCerrado);   // Desplazamos a la posición 0
+    servoMotor.attach(PinServo); // el servo trabajará desde el pin definido como PinServo
+    servoMotor.write(ServoCerrado);   // Desplazamos a la posición 0
+    flagBuzzer=0;
+    pinMode(PinLDR,INPUT); //Defino el tipo de pin para el LDR (Entrada)
+    pinMode(PinLED,OUTPUT); //Defino el tipo de pin para el LED (Salida)
+     pinMode(PinLED2,OUTPUT); //Defino el tipo de pin para el LED (Salida)
+    pinMode(sensorMojado, INPUT);  //definir pin como entrada
+    dht.begin();// Comenzamos el sensor DHT
+    analogWrite(PinLED2,255); 
+    
+    iniciarMelodia(PinBuzzer);
+    tiempoInicioConex = millis();
+    tiempoInfoTempIni = millis();
+    tiempoInicialAmaque = millis();
+    tiempoSilencio = millis();
+    tiempoUltimoLlanto = millis();
+    tiempoInicioProm = millis();
+    tiempoFinProm = 0; 
 
-  pinMode(PinLDR,INPUT); //Defino el tipo de pin para el LDR (Entrada)
-  pinMode(PinLED,OUTPUT); //Defino el tipo de pin para el LED (Salida)
-  
-  tiempoInicialAmaque = millis();
-  tiempoSilencio = millis();
-  tiempoUltimoLlanto = millis();
-  tiempoInicioProm = millis();
-  tiempoFinProm = 0; 
-  
-  sendCommand("AT+RST\r\n",2000,DEBUG);      // resetear módulo
-  sendCommand("AT+CWSAP=\"ARDUINO\",\"soa-criard-266\",3,2\r\n",8000,DEBUG); 
-  sendCommand("AT+CWMODE=2\r\n",1000,DEBUG); // configurar como cliente
-  //sendCommand("AT+CWJAP=\"Speedy-AC6CA3\",\"matiasmanda\"\r\n",8000); //SSID y contraseña para unirse a red 
-  sendCommand("AT+CIFSR\r\n",1000,DEBUG);    // obtener dirección IP
-  sendCommand("AT+CIPMUX=1\r\n",1000,DEBUG); // configurar para multiples conexiones
-  sendCommand("AT+CIPSERVER=1,80\r\n",1000,DEBUG);         // servidor en el puerto 80
-  
+    
 }
-
-
+ 
 void loop()
-{
-  if(esp8266.available()){
-      detectarCliente();
-  }
-  amacarCuna();
+{    
+   //sI reciben datos del HC05 
+    if (BTserial.available())
+    {                
+      //se los lee y se los muestra en el monitor serie
+      c = BTserial.read();    
+      analizarDato(c);   
+      switch(c){
+        case '$':
+          Serial.println("Envio de informe");
+          informarTemperatura();  
+          break;      
+        case '#':
+          Serial.println("Envio de informe");
+          informarEstadoSensor();  
+          break; 
+      }        
+    }
+    escucharLlanto();
+    hamacarCuna(); 
+    detectarLuz();
+    detectarMojado();
+    
 }
-bool detectarCliente(){
+/**Funcion que utiliza el BT para determinar la accion a realizar**/
 
-  if(esp8266.find("+IPD,")) // revisar si el servidor recibio datos
-     {
-         delay(1500); // esperar que lleguen los datos hacia el buffer
-         int conexionID = esp8266.read()-48; // obtener el ID de la conexión para poder responder
-         int state = analizarPeticion();
-         String respuesta = construirRespuesta(state);
-         enviarRespuesta(respuesta);
-         //cerrarConexion();
-     }
-  
+//ENVIAR ESTADOS A LA APLICACION
+void informarEstadoSensor(){
+    //BTserial.write("0");//Dato que envio de entrada para que no me borre el primer caracter del mensaje
+    if(ESTADOSERVO == "ON"){
+      MENSAJE += SERVOENCENDIDO;
+    }else{
+      MENSAJE += SERVOAPAGADO;
+      }
+    if(ESTADOMICRO == "ON"){
+      MENSAJE += MICROENCENDIDO;
+    }else{
+      MENSAJE += MICROAPAGADO;
+      }
+    if(ESTADOLED == "ON"){
+      MENSAJE += LUZENCENDIDA;
+    }else{
+      MENSAJE += LUZAPAGADA;
+      }
+    if(ESTADOCOLCHON == "ON"){
+      MENSAJE += COLCHONMOJADO;
+      ESTADOCOLCHON = "OFF";
+    }else{
+      MENSAJE += COLCHONSECO;
+      }
+    
+    enviarEstadoActualAANDROID(MENSAJE); 
+    BTserial.write('\n');
+    Serial.println(MENSAJE);
+    MENSAJE = "#C";
+    BTserial.flush();
   }
-int analizarPeticion(){
 
-     int state = 0; 
-     //Formato URL = http://192.168.4.1/led=1
-     if(esp8266.find("led=")!= -1){
+void informarTemperatura(){
+  //tiempoInfoTemp = millis() - tiempoInfoTempIni;
+  //if(tiempoInfoTemp > 5000){
+    TEMPERATURA += String(dht.readTemperature());// + "H" + String(dht.readHumidity());  
+    enviarEstadoActualAANDROID(TEMPERATURA); 
 
-        state = (esp8266.read()-48); // Obtener el estado del pin a mostrar
-        Serial.print("EStado del state ");
-          Serial.println(state);
-        if(state==1){
-          prendoCuna =1;  
-        }else{
-          prendoCuna =0; 
-        }
+    BTserial.write('\n');
+    Serial.println(TEMPERATURA);
+    TEMPERATURA = "#T";
+    BTserial.flush();
+    //tiempoInfoTempIni = millis();
+  //}
+}
+void enviarEstadoActualAANDROID(String msj){
+    BTserial.print(msj);     
+}
+
+void analizarDato(char c)
+{
+  switch(c){
+      case encenderCunaBT:
+      Serial.println("Solicitud recibida: " + c);
+        tiempoInicialAmaque = millis();
+        ESTADOSERVO = "ON"; 
+        break;        
+      case apagarCunaBT:
+      Serial.println("Solicitud recibida: " + c);
+        ESTADOSERVO = "OFF";
+        break;
+      case encenderLEDBT:
+      Serial.println("Solicitud recibida: " + c);
+        analogWrite(PinLED2,0); 
+        break;
+      case apagarLEDBT:
+      Serial.println("Solicitud recibida: " + c);
+        analogWrite(PinLED2,255); 
+        break;
+      case encenderMusicBT:
+      Serial.println("Solicitud recibida: " + c);
         
-      }  // bucar el texto "led="
-     
-    
-     //digitalWrite(13, state); // Cambiar estado del pin
-     while(esp8266.available()){
-        char c = esp8266.read();
+        //if(flagBuzzer==0){
+         sonarMelody6();
+          //sonarMelody4();
+          //}
+        flagBuzzer=1;
+        break;
+      case apagarMusicBT:
+      Serial.println("Solicitud recibida: " + c);
+        apagarMelody();
+        break;
+      default:
         Serial.print(c);
-    } 
-    return state;
-  }
-/**DECLARACION DE FUNCIONES**/
-void encenderLEDGradual(float luz){
-  
-    analogWrite(PinLED,luz);   
-  }
+        break;
+    }
+}
 
-float detectarLuz(){
-  
-    tiempo_transcurrido=millis()-cronometro_lecturas;
-    
+/**DECLARACION DE FUNCIONES**/  
+void detectarLuz(){
+  int valor; // Variable para cálculos.
+   tiempo_transcurrido=millis()-cronometro_lecturas;    
     if(tiempo_transcurrido>ESPERA_LECTURAS){// espera no bloqueante
-      
         cronometro_lecturas=millis();
         luminosidad=analogRead(PinLDR);
-        Serial.print("La luminosidad es del ");
-        Serial.print(luminosidad*coeficiente_porcentaje);//detectamos el porcentaje de luminosidad
-        Serial.println("%");
     }
-
-    return luminosidad*coeficiente_porcentaje;
+    //*************************Comentado por Vale***********************//
+    //le pasamos el valor de luminosidad al ldr
+    double swi= luminosidad*coeficiente_porcentaje;
+    
+    if(swi < 130.0){
+      ESTADOLED = "OFF";
+      if(flagNotificacionLuz==1){
+        informarEstadoSensor(); 
+        flagNotificacionLuz=0;
+            }
+         analogWrite(PinLED,255);
+    }else{
+      ESTADOLED = "ON";
+       if(flagNotificacionLuz==0){
+        informarEstadoSensor(); 
+        flagNotificacionLuz=1;
+            }
+            
+      analogWrite(PinLED,swi);  
+      if(swi>225.0){
+        analogWrite(PinLED,0);  
+      }
+    }
+}
   
-  }
-
-void amacarCuna(){
-  if(prendoCuna == 1){
-  tiempoAmaque = millis()-tiempoInicialAmaque;
-    if(tiempoAmaque>20){
-    if(amacar==0){
+void hamacarCuna(){
+  if(ESTADOSERVO == "ON"){
+    if(flagNotificacion == 0 ){
+      informarEstadoSensor(); 
+      flagNotificacion = 1;
+    } 
+    tiempoAmaque = millis()-tiempoInicialAmaque;
+    if(tiempoAmaque > 20){
+    if(hamacar==0){
       posicionServo ++;
       servoMotor.write(posicionServo); 
       if(posicionServo == ServoAbierto){
-        amacar=1;
+        hamacar=1;
       }
     }else{
       posicionServo --;
       servoMotor.write(posicionServo);
       if(posicionServo == ServoCerrado){
-        amacar=0;
+        hamacar=0;
       }
     }
     tiempoInicialAmaque=millis();
     }
-  }
-  
+  }else{
+    if(flagNotificacion == 1 ){
+      informarEstadoSensor(); 
+      flagNotificacion = 0;
+    } 
+      servoMotor.write(ServoQUIETO); 
+    }  
 }
 
-
 void escucharLlanto(){
- valorLlanto = analogRead (pinMicro);
- 
-    Serial.println(valorLlanto ,DEC);
-  if(valorLlanto>umbralRuido)
-  {
-    Serial.print("Está haciendo ruido");
-    Serial.println(valorLlanto ,DEC);
-    prendoCuna = 1;
+  valorLlanto = (double)analogRead (pinMicro); 
+  if(muestras == 2000){
+    ruidoPromedio = sumaRuido/muestras;  
+    umbralRuidol = ruidoPromedio+ruidoPromedio/2;
+
+    muestras = 0;
+    sumaRuido = 0;
+  }else{
+    muestras = muestras +1 ;
+    sumaRuido = sumaRuido + valorLlanto;
+  }
+  
+  if(umbralRuidol!=0 && (valorLlanto>umbralRuidol) ){
+   ESTADOSERVO = "ON";
+   ESTADOMICRO = "ON";
     tiempoUltimoLlanto = millis();
+    tiempoInicialAmaque = millis();
   }else{
     tiempoSilencio = millis();
   }
   //si despues de cierto tiempo no llora apago la mecedora
   if((tiempoSilencio - tiempoUltimoLlanto)> standby ){
-        prendoCuna = 0;
-        tiempoSilencio = millis();
-        tiempoUltimoLlanto = millis(); 
+    ESTADOSERVO = "OFF";
+    ESTADOMICRO = "OFF";
+    tiempoSilencio = millis();
+    tiempoUltimoLlanto = millis(); 
   }
 }
 
-/*
-Funciones de ESP8266
-**/
-String sendData(String command, const int timeout, boolean debug)
-{
-    String response = "";
-    
-    int dataSize = command.length();
-    char data[dataSize];
-    command.toCharArray(data,dataSize);
-           
-    esp8266.write(data,dataSize); // send the read character to the esp8266
-    if(debug)
-    {
-      Serial.println("\r\n====== HTTP Response From Arduino ======");
-      Serial.write(data,dataSize);
-      Serial.println("\r\n========================================");
-    }
-    
-    long int time = millis();
-    
-    while( (time+timeout) > millis())
-    {
-      while(esp8266.available())
-      {
-        
-        // The esp has data so display its output to the serial window 
-        char c = esp8266.read(); // read the next character.
-        response+=c;
-      }  
-    }
-    
-    if(debug)
-    {
-      Serial.print(response);
-    }
-    
-    return response;
-}
- 
-
-void sendHTTPResponse(int connectionId, String content)
-{
-     // build HTTP response
-     String httpResponse;
-     String httpHeader;
-     // HTTP Header
-     httpHeader = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n"; 
-     httpHeader += "Content-Length: ";
-     httpHeader += content.length();
-     httpHeader += "\r\n";
-     httpHeader +="Connection: close\r\n\r\n";
-     httpResponse = httpHeader + content + " "; // There is a bug in this code: the last character of "content" is not sent, I cheated by adding this extra space
-     for(int i=0; i<= connectionId; i++){
-      sendCIPData(i,httpResponse);
-      delay(1500);
-     }
-}
- 
-
-void sendCIPData(int connectionId, String data)
-{
-   String cipSend = "AT+CIPSEND=";
-   cipSend += connectionId;
-   cipSend += ",";
-   cipSend +=data.length();
-   cipSend +="\r\n";
-   sendCommand(cipSend,1000,DEBUG);
-   sendData(data,1000,DEBUG);
-}
- 
-String sendCommand(String command, const int timeout, boolean debug)
-{
-    String response = "";          
-    esp8266.print(command); // send the read character to the esp8266   
-    long int time = millis();   
-    while( (time+timeout) > millis()){
-      while(esp8266.available()){
-        
-        // The esp has data so display its output to the serial window 
-        char c = esp8266.read(); // read the next character.
-        response+=c;
-      }  
-    }  
-    if(debug){
-      Serial.print(response);
-    }   
-    return response;
-}
-
-
-
-String construirRespuesta(int state){
-  String output;
-  String strState =  String(state);
-  String input = "{\"led\":\""+strState+"\", \"humedad\":\"80%\"}";
-  JsonObject& root = jsonBuffer.parseObject(input);
-        //responder y cerrar la conexión para que el navegador no se quede cargando 
-        // página web a enviar
-        String webpage = "";
-        if (state==1){
-          root[String("led")] = 1;
-          //webpage += "Led = encendido!";
-        }
-        else { webpage += "Led = apagado!";}
-        
-       return input;
-       
+void detectarMojado(){
+  int value;
+  value = digitalRead(sensorMojado);  //lectura digital de pin
+  if (value == LOW) {
+       ESTADOCOLCHON = "ON";
+       if(flagNotificacionMojado == 0 ){
+          informarEstadoSensor(); 
+          flagNotificacionMojado = 1;
+       } 
   }
-bool enviarRespuesta(String respuesta){
-      sendHTTPResponse(conexionID,respuesta);
+    if (value == HIGH) {
+       ESTADOCOLCHON = "OFF";
+       if(flagNotificacionMojado == 1 ){
+          informarEstadoSensor(); 
+          flagNotificacionMojado = 0;
+       } 
   }
-  
-bool cerrarConexion(){
-  
-         // comando para terminar conexión
-       String comandoCerrar = "AT+CIPCLOSE=";
-       comandoCerrar+=conexionID;
-       comandoCerrar+="\r\n";
-       sendData(comandoCerrar,3000,DEBUG);
-  }
-  
-
+}

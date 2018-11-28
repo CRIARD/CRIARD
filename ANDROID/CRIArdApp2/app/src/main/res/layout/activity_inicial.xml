@@ -1,40 +1,40 @@
-<?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ActivityInicial">
+    android:orientation="vertical"
+    android:padding="@dimen/activity_vertical_margin">
+
+    <TextView
+        android:id="@+id/txtEstado"
+        android:layout_width="match_parent"
+        android:layout_height="84dp"
+        android:gravity="center"
+        android:text="@string/text_bluetooth_off"
+        android:textColor="#ff0000"
+        android:textSize="17sp" />
 
     <Button
-        android:id="@+id/btn_iniciar"
-        android:layout_width="212dp"
+        android:id="@+id/btnActivar"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="43dp"
-        android:text="Conectar" />
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:text="@string/text_enable" />
 
-    <EditText
-        android:id="@+id/txt_ip"
-        android:layout_width="wrap_content"
+    <Button
+        android:id="@+id/btnEmparejar"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="118dp"
-        android:ems="10"
-        android:hint="IP"
-        android:inputType="textPersonName" />
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:enabled="false"
+        android:text="@string/text_view_paired" />
 
-    <EditText
-        android:id="@+id/txt_puerto"
-        android:layout_width="wrap_content"
+    <Button
+        android:id="@+id/btnBuscar"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="206dp"
-        android:ems="10"
-        android:hint="Puerto"
-        android:inputType="textPersonName" />
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:enabled="false"
+        android:text="@string/text_scan_devices" />
 
-</RelativeLayout>
+</LinearLayout>
