@@ -68,93 +68,29 @@ public class ServicioBT extends Service {
             switch (msg.what){
                 case GET_INFO:
                     Log.i("Notificacion", "Se conecto CRIARD");
-                    //mConnectedThread.write("#");
-                    message.arg1 = GET_RESPUESTA;
-                    extra.putString(RESULTPATH,"QEM");
-                    message.setData(extra);
-                    try {
-                        outMessenger.send(message);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
-                    break;
+                    mConnectedThread.write("#");
                 case GET_INFO_TEMP:
                     Log.i("Notificacion", "Se conecto Temperatura");
-                    //mConnectedThread.write("$");
-                    message.arg1 = GET_RESPUESTA;
-                    extra.putString(RESULTPATH,"T22°");
-                    message.setData(extra);
-                    try {
-                        outMessenger.send(message);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
+                    mConnectedThread.write("$");
                     break;
+
                 case GET_SERVO_ON:
                     mConnectedThread.write("1");
-                    message.arg1 = GET_RESPUESTA;
-                    extra.putString(RESULTPATH,"Q");
-                    message.setData(extra);
-                    try {
-                        outMessenger.send(message);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
                     break;
                 case GET_SERVO_OFF:
                     mConnectedThread.write("2");
-                    message.arg1 = GET_RESPUESTA;
-                    extra.putString(RESULTPATH,"W");
-                    message.setData(extra);
-                    try {
-                        outMessenger.send(message);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
                     break;
                 case GET_LED_ON:
                     mConnectedThread.write("3");
-                    message.arg1 = GET_RESPUESTA;
-                    extra.putString(RESULTPATH,"E");
-                    message.setData(extra);
-                    try {
-                        outMessenger.send(message);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
                     break;
                 case GET_LED_OFF:
                     mConnectedThread.write("4");
-                    message.arg1 = GET_RESPUESTA;
-                    extra.putString(RESULTPATH,"R");
-                    message.setData(extra);
-                    try {
-                        outMessenger.send(message);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
                     break;
                 case GET_MUSICA_ON:
                     mConnectedThread.write("5");
-                    message.arg1 = GET_RESPUESTA;
-                    extra.putString(RESULTPATH,"M");
-                    message.setData(extra);
-                    try {
-                        outMessenger.send(message);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
                     break;
                 case GET_MUSICA_OFF:
                     mConnectedThread.write("6");
-                    message.arg1 = GET_RESPUESTA;
-                    extra.putString(RESULTPATH,"Y");
-                    message.setData(extra);
-                    try {
-                        outMessenger.send(message);
-                    } catch (RemoteException e) {
-                        e.printStackTrace();
-                    }
                     break;
                 default:
                     super.handleMessage(msg);
@@ -314,14 +250,9 @@ public class ServicioBT extends Service {
 
                                 @Override
                                 public void run() {
-                                    // El servicio se finaliza a sí mismo cuando finaliza su
-                                    // trabajo.
                                     try {
-                                        // Simulamos trabajo de 10 segundos.
                                         Thread.sleep(10000);
-
                                         Log.i("Notificacion","Comienzo Notificacion");
-                                        // Instanciamos e inicializamos nuestro manager.
                                         NotificationManager nManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                                         NotificationCompat.Builder builder = new NotificationCompat.Builder(
                                                 getBaseContext())
@@ -345,14 +276,10 @@ public class ServicioBT extends Service {
 
                                 @Override
                                 public void run() {
-                                    // El servicio se finaliza a sí mismo cuando finaliza su
-                                    // trabajo.
                                     try {
-                                        // Simulamos trabajo de 10 segundos.
                                         Thread.sleep(10000);
 
                                         Log.i("Notificacion","Comienzo Notificacion");
-                                        // Instanciamos e inicializamos nuestro manager.
                                         NotificationManager nManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                                         NotificationCompat.Builder builder = new NotificationCompat.Builder(
                                                 getBaseContext())
