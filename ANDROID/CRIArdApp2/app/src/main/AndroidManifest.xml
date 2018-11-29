@@ -27,25 +27,9 @@
         android:roundIcon="@mipmap/ic_launcher_bebe"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity
-            android:name=".ActivityInicial"
-            android:label="@string/title_activity_inicial"
-            android:screenOrientation="locked"></activity>
         <!-- - Defino la activity con el listado de dispositivos de Bluethoot encontrados -->
-        <activity android:name=".DeviceListActivity"
-            android:screenOrientation="locked">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-            </intent-filter>
-        </activity>
         <activity android:name=".CRIArdMainActivity"
             android:screenOrientation="locked"/>
-        <activity
-            android:name=".ListaSensoresActivity"
-            android:label="Lista de Sensores"
-            android:screenOrientation="locked">
-
-        </activity>
         <activity android:name=".MainActivity"
             android:screenOrientation="locked">
             <intent-filter>
