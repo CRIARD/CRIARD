@@ -41,7 +41,6 @@ int tiempoUltimoLlanto = 0;
 int tiempoSilencio = 0;
 int tiempoInicioProm = 0; // para calcular el ruido ambiente
 int tiempoFinProm = 0;
-int tiempoInfoTempIni = 0;
 int tiempoInfoTemp = 0;
 double muestras = 0;
 double sumaRuido = 0;
@@ -118,7 +117,6 @@ void setup()
     
     iniciarMelodia(PinBuzzer);
     tiempoInicioConex = millis();
-    tiempoInfoTempIni = millis();
     tiempoInicialAmaque = millis();
     tiempoSilencio = millis();
     tiempoUltimoLlanto = millis();
@@ -157,7 +155,6 @@ void loop()
 
 //ENVIAR ESTADOS A LA APLICACION
 void informarEstadoSensor(){
-    //BTserial.write("0");//Dato que envio de entrada para que no me borre el primer caracter del mensaje
     if(ESTADOSERVO == "ON"){
       MENSAJE += SERVOENCENDIDO;
     }else{
@@ -188,8 +185,6 @@ void informarEstadoSensor(){
   }
 
 void informarTemperatura(){
-  //tiempoInfoTemp = millis() - tiempoInfoTempIni;
-  //if(tiempoInfoTemp > 5000){
     TEMPERATURA += String(dht.readTemperature());// + "H" + String(dht.readHumidity());  
     enviarEstadoActualAANDROID(TEMPERATURA); 
 
@@ -197,8 +192,6 @@ void informarTemperatura(){
     Serial.println(TEMPERATURA);
     TEMPERATURA = "#T";
     BTserial.flush();
-    //tiempoInfoTempIni = millis();
-  //}
 }
 void enviarEstadoActualAANDROID(String msj){
     BTserial.print(msj);     
@@ -226,11 +219,7 @@ void analizarDato(char c)
         break;
       case encenderMusicBT:
       Serial.println("Solicitud recibida: " + c);
-        
-        //if(flagBuzzer==0){
          sonarMelody6();
-          //sonarMelody4();
-          //}
         flagBuzzer=1;
         break;
       case apagarMusicBT:
@@ -251,7 +240,6 @@ void detectarLuz(){
         cronometro_lecturas=millis();
         luminosidad=analogRead(PinLDR);
     }
-    //*************************Comentado por Vale***********************//
     //le pasamos el valor de luminosidad al ldr
     double swi= luminosidad*coeficiente_porcentaje;
     
